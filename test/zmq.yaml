@@ -1,0 +1,6 @@
+Devices:
+  reqrep:
+    frontend: !zmq.Rep
+      - !Bind ipc:///tmp/paperjam-req
+    backend: !zmq.Req
+      - !Bind ipc:///tmp/paperjam-rep

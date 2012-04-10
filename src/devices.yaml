@@ -1,0 +1,111 @@
+__meta__:
+  program-name: paperjam
+  default-config: /etc/paperjam.yaml
+  description: Zeromq/libxs multipurpose device
+
+
+__types__:
+  endpoint_type:
+    __tags__:
+      __property__: kind
+      __default__: Bind
+      Bind: 1
+      Connect: 2
+    __value__: !String ""
+
+  socket:
+    __tags__:
+      __property__: kind
+      __default__: unknown
+      unknown: 0
+      zmq.Req: 0x101
+      zmq.Rep: 0x102
+      zmq.Push: 0x103
+      zmq.Pull: 0x104
+      zmq.Pub: 0x105
+      zmq.Sub: 0x106
+      xs.Req: 0x201
+      xs.Rep: 0x202
+      xs.Push: 0x203
+      xs.Pull: 0x204
+      xs.Pub: 0x205
+      xs.Sub: 0x206
+    __value__: !Array
+        element: !Struct endpoint_type
+    sndhwm: !UInt
+      =: 0
+      description: >
+        Zeromq/libxs high water mark for socket. Zero means no limit.
+        Refer to zeromq/libxs documentation for details
+    rcvhwm: !UInt
+      =: 0
+      description: >
+        Zeromq/libxs high water mark for socket. Zero means no limit. Refer
+        to zeromq/libxs documentation for details
+    identity: !String
+      =: ""
+      description: >
+        Zeromq/libxs identity for the socket. Refer to zeromq/libxs
+        documentation for details
+    affinity: !UInt
+      =: 0
+      description: >
+        Thread affinity bitmap for this socket. Refer to zeromq/libxs
+        documentation for details
+    sndbuf: !UInt
+      =: 0
+      description: >
+        Underlying kernel transmit buffer size. Refer to operating system
+        documentation for the SO_SNDBUF socket option
+    rcvbuf: !UInt
+      =: 0
+      description: >
+        Underlying kernel transmit buffer size. Refer to operating system
+        documentation for the SO_RCVBUF socket option
+    linger: !UInt
+      =: 10000
+      description: >
+        Amount of time zeromq/libxs tries to send messages already put into
+        the buffers. Zerogw/libxs will probably stay alive at most this amount
+        of time when got SIGTERM. Time is expressed in miliseconds
+    _socket: !CType void*
+    _pollindex: !CType int
+    _name: !CType const char *
+    _type: !CType const char *
+
+  device:
+    frontend: !Struct socket
+    backend: !Struct socket
+    monitor: !Struct socket
+
+
+Zmq:
+
+  io-threads: !UInt
+    default: 1
+    min: 1
+    max: 1000
+    description: Zeromq io threads
+    command-line: --zmq-io-threads
+
+
+Xs:
+
+  io-threads: !UInt
+    default: 1
+    min: 1
+    max: 1000
+    description: Libxs io threads
+    command-line: --xs-io-threads
+
+  max-sockets: !UInt
+    default: 512
+    min: 8
+    max: 1Mi
+    descriptions: Libxs socket limit
+
+
+Devices: !Mapping
+  key-element: !String
+  value-element: !Struct device
+
