@@ -1,6 +1,18 @@
 Devices:
   reqrep:
     frontend: !zmq.Rep
-      - !Bind ipc:///tmp/paperjam-req
-    backend: !zmq.Req
       - !Bind ipc:///tmp/paperjam-rep
+    backend: !zmq.Req
+      - !Bind ipc:///tmp/paperjam-req
+
+  pipeline:
+    frontend: !zmq.Push
+      - !Bind ipc:///tmp/paperjam-push
+    backend: !zmq.Pull
+      - !Bind ipc:///tmp/paperjam-pull
+
+  distrib:
+    frontend: !zmq.Pub
+      - !Bind ipc:///tmp/paperjam-pub
+    backend: !zmq.Sub
+      - !Bind ipc:///tmp/paperjam-sub

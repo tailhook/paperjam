@@ -68,6 +68,10 @@ __types__:
         Amount of time zeromq/libxs tries to send messages already put into
         the buffers. Zerogw/libxs will probably stay alive at most this amount
         of time when got SIGTERM. Time is expressed in miliseconds
+    subscribe: !Array
+      element: !String
+      description: List of topics to subscribe to. Subscribes to
+        everyting if empty
     _socket: !CType void*
     _pollindex: !CType int
     _name: !CType const char *

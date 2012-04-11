@@ -89,9 +89,19 @@ int open_zmq_socket(config_socket_t *sock) {
     if(!s) return -1;
     CONFIG_ENDPOINT_TYPE_LOOP(addr, sock->value) {
         if(addr->value.kind == CONFIG_Bind) {
-            ZMQ_ASSERTERR(zmq_bind(s, addr->value.value));
+            ZMQ_SOCKETERR(sock, zmq_bind(s, addr->value.value));
         } else {
-            ZMQ_ASSERTERR(zmq_connect(s, addr->value.value));
+            ZMQ_SOCKETERR(sock, zmq_connect(s, addr->value.value));
+        }
+    }
+    if(type == ZMQ_SUB) {
+        if(sock->subscribe_len) {
+            CONFIG_STRING_LOOP(topic, sock->subscribe) {
+                ZMQ_SOCKETERR(sock, zmq_setsockopt(s, ZMQ_SUBSCRIBE,
+                    topic->value, topic->value_len));
+            }
+        } else {
+            ZMQ_SOCKETERR(sock, zmq_setsockopt(s, ZMQ_SUBSCRIBE, NULL, 0));
         }
     }
     // TODO(tailhook) set socket options
@@ -216,7 +226,7 @@ int zmq_poll_start(config_main_t *config) {
                 // If we polling for POLLOUT then there is a socket
                 // active for reading
                 //config_device_t *dev = devices[i];
-                assert(0);
+                //assert(0);
             }
 
             if(!--rc) break;

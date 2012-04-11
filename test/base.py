@@ -14,10 +14,13 @@ class Wrapper(object):
         self.sock.send_multipart(data, zmq.DONTWAIT)
 
     def recv_multipart(self):
-        s, _, _ = zmq.select([self.sock], [], [], 1000)
+        s, _, _ = zmq.select([self.sock], [], [], 1.0)
         if s != [self.sock]:
             raise AssertionError('Timeout')
         return self.sock.recv_multipart(zmq.DONTWAIT)
+
+    def subscribe(self, data):
+        self.sock.setsockopt(zmq.SUBSCRIBE, data)
 
 
 class Test(unittest.TestCase):
@@ -26,7 +29,6 @@ class Test(unittest.TestCase):
         binary = os.environ.get("PAPERJAM", './build/paperjam')
         configdir = os.environ.get("CONFIGDIR", './test')
         self.proc = subprocess.Popen([binary, '-c',  configdir + '/zmq.yaml'])
-        print("COMMANDLINE", binary, '-c',  configdir + '/zmq.yaml')
         self.addCleanup(self.proc.terminate)
         self.ctx = zmq.Context(1)
         self.addCleanup(self.ctx.term)
