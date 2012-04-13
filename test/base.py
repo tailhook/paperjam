@@ -1,6 +1,7 @@
 import unittest
 import subprocess
 import os
+import os.path
 
 import zmq
 
@@ -25,10 +26,13 @@ class Wrapper(object):
 
 class Test(unittest.TestCase):
 
+    COMMAND_LINE = ['$PAPERJAM', '-c', '$CONFIGDIR/zmq.yaml']
+
     def setUp(self):
-        binary = os.environ.get("PAPERJAM", './build/paperjam')
-        configdir = os.environ.get("CONFIGDIR", './test')
-        self.proc = subprocess.Popen([binary, '-c',  configdir + '/zmq.yaml'])
+        os.environ.setdefault("PAPERJAM", './build/paperjam')
+        os.environ.setdefault("CONFIGDIR", './test')
+        self.proc = subprocess.Popen([os.path.expandvars(arg)
+                                      for arg in self.COMMAND_LINE])
         self.addCleanup(self.proc.terminate)
         self.ctx = zmq.Context(1)
         self.addCleanup(self.ctx.term)

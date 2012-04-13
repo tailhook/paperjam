@@ -2,6 +2,8 @@ __meta__:
   program-name: paperjam
   default-config: /etc/paperjam.yaml
   description: Zeromq/libxs multipurpose device
+  c_include:
+  - support.h
 
 
 __types__:
@@ -72,10 +74,10 @@ __types__:
       element: !String
       description: List of topics to subscribe to. Subscribes to
         everyting if empty
-    _socket: !CType void*
-    _pollindex: !CType int
     _name: !CType const char *
     _type: !CType const char *
+    _impl: !CType struct socket_impl *
+    _state: !CType struct socket_state
 
   device:
     frontend: !Struct socket

@@ -2,30 +2,182 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <poll.h>
 
 #include "config.h"
 #include "handle_zmq.h"
 #include "handle_xs.h"
 #include "devices.h"
 
-static void open_socket(config_socket_t *sock) {
-    if(sock->kind == CONFIG_unknown) {
-        sock->_socket = NULL;
-    } else if(IS_ZMQ(sock)) {
-        ZMQ_ASSERTERR(open_zmq_socket(sock));
-    } else if(IS_XS(sock)) {
-        XS_ASSERTERR(open_xs_socket(sock));
-    } else {
-        assert(0);
+#define ASSERTERR(val) if((val) == -1) { \
+    fprintf(stderr, "Assertion error at %s:%d: %s\n", \
+        __FILE__, __LINE__, \
+        zmq_strerror(errno)); \
+    abort(); \
     }
-}
 
 static void device_check(config_socket_t *front, config_socket_t *back) {
-    // TODO(tailhook) check if socket match by a pattern
+    if(IS_READONLY(front) && IS_WRITEONLY(back)) return;
+    if(IS_WRITEONLY(front) && IS_READONLY(back)) return;
+    if(IS_REQ(front) && IS_REP(back)) return;
+    if(IS_REP(front) && IS_REQ(back)) return;
+    fprintf(stderr, "Wrong combination of sockets for %s", front->_name);
+    abort();
 }
 
 static void monitor_check(config_socket_t *sock) {
-    // TODO(tailhook) check if monitor socket type is ok
+    if(IS_WRITEONLY(sock)) return;
+    // Can reply socket be able to monitor? probably not
+    fprintf(stderr, "Wrong socket for monitoring %s, use push or pub sockets",
+        sock->_name);
+    abort();
+}
+
+static int close_message(message *msg) {
+    // TODO(tailhook)
+    if(msg->zmq) {
+#ifdef HAVE_ZMQ
+        ZMQ_ASSERTERR(zmq_msg_close(&msg->zmq_msg));
+#else
+        assert(0);
+#endif
+    }
+    if(msg->xs) {
+#ifdef HAVE_ZMQ
+        XS_ASSERTERR(xs_msg_close(&msg->xs_msg));
+#else
+        assert(0);
+#endif
+    }
+    msg->xs = 0;
+    msg->zmq = 0;
+    msg->more = 0;
+    return 0;
+}
+
+static int forward(context *ctx, config_socket_t *src, config_socket_t *tgt,
+                   config_socket_t *mon, char *name)
+{
+    message msg;
+    msg.xs = 0;
+    msg.zmq = 0;
+    msg.more = 0;
+    int rc = src->_impl->read_message(src, &msg);
+    if(rc == -1) {
+        if(errno == EAGAIN) {
+            return 0;
+        }
+        ASSERTERR(rc);
+    }
+    int monactive = 0;
+    if(mon->kind) {
+        rc = mon->_impl->write_string(mon, name, 1);
+        if(rc >= 0) {
+             monactive = 1;
+        }
+    }
+    if(monactive) {
+        ASSERTERR(mon->_impl->write_message(mon, &msg));
+    }
+    rc = tgt->_impl->write_message(tgt, &msg);
+    if(rc == -1) {
+        if(errno == EAGAIN) {
+            while(msg.more) {
+                close_message(&msg);
+                ASSERTERR(src->_impl->read_message(src, &msg));
+            }
+            close_message(&msg);
+            return 0;
+        }
+        ASSERTERR(rc);
+    }
+    while(msg.more) {
+        close_message(&msg);
+        ASSERTERR(src->_impl->read_message(src, &msg));
+        if(monactive) {
+            ASSERTERR(mon->_impl->write_message(mon, &msg));
+        }
+        ASSERTERR(tgt->_impl->write_message(tgt, &msg));
+    }
+    close_message(&msg);
+    return 1;
+}
+
+static int iterate(context *ctx) {
+    int res = 0;  // total number of messages done
+    int iter;  // messages on single socket pair
+    int rc;
+    CONFIG_STRING_DEVICE_LOOP(item, ctx->config->Devices) {
+        if(item->value.frontend._state.readable
+           && item->value.backend._state.writeable) {
+            res = 1;
+            do {
+                rc = forward(ctx,
+                    &item->value.frontend,
+                    &item->value.backend,
+                    &item->value.monitor, "in");
+                assert(rc >= 0);
+            } while(rc && iter < 100);
+        }
+        if(item->value.backend._state.readable
+           && item->value.frontend._state.writeable) {
+            res = 1;
+            do {
+                rc = forward(ctx,
+                    &item->value.backend,
+                    &item->value.frontend,
+                    &item->value.monitor, "out");
+                assert(rc >= 0);
+                iter += rc;
+            } while(rc && iter < 100);
+        }
+    }
+    return res;
+}
+
+void loop(context *ctx) {
+    int maxpoll = ctx->config->Devices_len*2;
+    int nsocks = 0;
+    struct pollfd pollitems[maxpoll];
+    config_socket_t *sockets[maxpoll];
+
+    CONFIG_STRING_DEVICE_LOOP(item, ctx->config->Devices) {
+        config_socket_t *sock = &item->value.frontend;
+        pollitems[nsocks].fd = sock->_impl->get_fd(sock);
+        pollitems[nsocks].events = POLLIN;
+        sockets[nsocks] = sock;
+        nsocks += 1;
+        sock->_impl->check_state(sock);
+
+        sock = &item->value.backend;
+        pollitems[nsocks].fd = sock->_impl->get_fd(sock);
+        pollitems[nsocks].events = POLLIN;
+        sockets[nsocks] = sock;
+        nsocks += 1;
+        sock->_impl->check_state(sock);
+    }
+    int timeout = 0;
+    for(;;) {
+        int rc = poll(pollitems, nsocks, timeout);
+        assert(rc >= 0); // remove
+        if(rc > 0) {
+            for(int i = 0; i < nsocks; ++i) {
+                if(pollitems[i].revents) {
+                    sockets[i]->_impl->check_state(sockets[i]);
+                }
+                // TODO(tailhook) optimize if rc < nsocks
+            }
+        }
+        if(iterate(ctx)) {
+            // there is something to process, but we want to check other
+            // sockets too
+            timeout = 0;
+        } else {
+            // nothing to do, can wait indefinitely
+            timeout = -1;
+        }
+    }
+
 }
 
 
@@ -37,48 +189,71 @@ int main(int argc, char **argv) {
 
     int zmq_socks = 0;
     int xs_socks = 0;
-
-    CONFIG_STRING_DEVICE_LOOP(item, config->Devices) {
-        if(IS_ZMQ(&item->value.frontend) || IS_ZMQ(&item->value.backend) ||
-            IS_ZMQ(&item->value.monitor)) {
-            ZMQ_ASSERTERR(init_zmq_context(config));
-            zmq_socks += 1;
-            break;
-        }
-    }
-
-    CONFIG_STRING_DEVICE_LOOP(item, config->Devices) {
-        if(IS_XS(&item->value.frontend) || IS_XS(&item->value.backend) ||
-            IS_XS(&item->value.monitor)) {
-            XS_ASSERTERR(init_xs_context(config));
-            xs_socks += 1;
-            break;
-        }
-    }
+    context ctx;
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.config = config;
 
     CONFIG_STRING_DEVICE_LOOP(item, config->Devices) {
         item->value.frontend._name = item->key;
         item->value.frontend._type = "frontend";
-        open_socket(&item->value.frontend);
+        if(IS_XS(&item->value.frontend)) {
+            xs_socks += 1;
+            XS_SOCKETERR(&item->value.frontend,
+                open_xs_socket(&ctx, &item->value.frontend));
+        } else {
+            zmq_socks += 1;
+            XS_SOCKETERR(&item->value.frontend,
+                open_zmq_socket(&ctx, &item->value.frontend));
+        }
 
         item->value.backend._name = item->key;
         item->value.backend._type = "backend";
-        open_socket(&item->value.backend);
+        if(IS_XS(&item->value.backend)) {
+            xs_socks += 1;
+            XS_SOCKETERR(&item->value.backend,
+                open_xs_socket(&ctx, &item->value.backend));
+        } else {
+            zmq_socks += 1;
+            XS_SOCKETERR(&item->value.backend,
+                open_zmq_socket(&ctx, &item->value.backend));
+        }
+        device_check(&item->value.frontend, &item->value.backend);
 
         item->value.monitor._name = item->key;
         item->value.monitor._type = "monitor";
-        open_socket(&item->value.monitor);
+        if(item->value.monitor.kind) {
+            if(IS_XS(&item->value.monitor)) {
+                xs_socks += 1;
+                XS_SOCKETERR(&item->value.monitor,
+                    open_xs_socket(&ctx, &item->value.monitor));
+            } else {
+                zmq_socks += 1;
+                XS_SOCKETERR(&item->value.monitor,
+                    open_zmq_socket(&ctx, &item->value.monitor));
+            }
+            monitor_check(&item->value.monitor);
+        }
 
-        device_check(&item->value.frontend, &item->value.backend);
-        monitor_check(&item->value.monitor);
     }
 
-    if(xs_socks > zmq_socks) {
-        XS_ASSERTERR(xs_poll_start(config));
-    } else {
-        ZMQ_ASSERTERR(zmq_poll_start(config));
+    loop(&ctx);
+
+    CONFIG_STRING_DEVICE_LOOP(item, config->Devices) {
+        item->value.frontend._impl->close(&item->value.frontend);
+        item->value.backend._impl->close(&item->value.frontend);
+        if(item->value.monitor._impl) {
+            item->value.monitor._impl->close(&item->value.frontend);
+        }
     }
 
-    // TODO(tailhook) implement shutdown code
-
+#ifdef HAVE_XS
+    if(ctx.xs_context) {
+        XS_ASSERTERR(xs_term(ctx.xs_context));
+    }
+#endif
+#ifdef HAVE_ZMQ
+    if(ctx.zmq_context) {
+        ZMQ_ASSERTERR(zmq_term(ctx.zmq_context));
+    }
+#endif
 }

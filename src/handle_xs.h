@@ -15,19 +15,23 @@
     fprintf(stderr, "Assertion error" #val ": %s\n", xs_strerror(errno)); \
     abort(); \
     }
+#define XS_SOCKETERR(sock, val) if((val) == -1) { \
+    fprintf(stderr, "Error on ``%s.%s'' at %s:%d: %s\n", \
+        (sock)->_name, (sock)->_type, __FILE__, __LINE__, \
+        zmq_strerror(errno)); \
+    abort(); \
+    }
 
 
 #else
 
-#define XS_ASSERTERR(val) assert((val) != -1);
+#define XS_ASSERTERR(val) assert(0);
+#define XS_SOCKETERR(sock, val) assert(0);
 
 #endif
 
-int init_xs_context(config_main_t *config);
-int open_xs_socket(config_socket_t *sock);
-int xs_poll_start(config_main_t *cfg);
-int xs_get_fd(config_socket_t *sock);
 
+int open_xs_socket(context *, config_socket_t *sock);
 
 #endif //_H_HANDLE_XS_
 

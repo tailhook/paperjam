@@ -1,0 +1,49 @@
+Devices:
+
+  reqrep1:
+    frontend: !zmq.Rep
+      - !Bind ipc:///tmp/paperjam-rep
+    backend: !xs.Req
+      - !Bind ipc:///tmp/paperjam-req1
+  reqrep2:
+    frontend: !xs.Rep
+      - !Connect ipc:///tmp/paperjam-req1
+    backend: !xs.Req
+      - !Connect ipc:///tmp/paperjam-rep2
+  reqrep3:
+    frontend: !xs.Rep
+      - !Bind ipc:///tmp/paperjam-rep2
+    backend: !zmq.Req
+      - !Bind ipc:///tmp/paperjam-req
+
+  pipeline1:
+    frontend: !zmq.Push
+      - !Bind ipc:///tmp/paperjam-push
+    backend: !xs.Pull
+      - !Bind ipc:///tmp/paperjam-pull1
+  pipeline2:
+    frontend: !xs.Push
+      - !Connect ipc:///tmp/paperjam-pull1
+    backend: !xs.Pull
+      - !Connect ipc:///tmp/paperjam-push2
+  pipeline3:
+    frontend: !xs.Push
+      - !Bind ipc:///tmp/paperjam-push2
+    backend: !zmq.Pull
+      - !Bind ipc:///tmp/paperjam-pull
+
+  distrib1:
+    frontend: !zmq.Pub
+      - !Bind ipc:///tmp/paperjam-pub
+    backend: !xs.Sub
+      - !Bind ipc:///tmp/paperjam-sub1
+  distrib2:
+    frontend: !xs.Pub
+      - !Connect ipc:///tmp/paperjam-sub1
+    backend: !xs.Sub
+      - !Connect ipc:///tmp/paperjam-pub2
+  distrib3:
+    frontend: !xs.Pub
+      - !Bind ipc:///tmp/paperjam-pub2
+    backend: !zmq.Sub
+      - !Bind ipc:///tmp/paperjam-sub

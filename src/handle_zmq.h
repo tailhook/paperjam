@@ -25,14 +25,12 @@
 
 #else
 
-#define ZMQ_ASSERTERR(val) assert((val) != -1);
+#define ZMQ_ASSERTERR(val) assert(0);
+#define ZMQ_SOCKETERR(sock, val) assert(0);
 
 #endif
 
 
-int init_zmq_context(config_main_t *cfg);
-int open_zmq_socket(config_socket_t *sock);
-int zmq_poll_start(config_main_t *cfg);
-int zmq_get_fd(config_socket_t *sock);
+int open_zmq_socket(context *, config_socket_t *sock);
 
 #endif //_H_HANDLE_ZMQ_

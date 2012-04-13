@@ -1,0 +1,24 @@
+Devices:
+  reqrep:
+    frontend: !zmq.Rep
+    - !Bind ipc:///tmp/paperjam-rep
+    backend: !zmq.Req
+    - !Bind ipc:///tmp/paperjam-req
+    monitor: !zmq.Push
+    - !Bind ipc:///tmp/paperjam-reqrep-mon
+
+  pipeline:
+    frontend: !zmq.Push
+    - !Bind ipc:///tmp/paperjam-push
+    backend: !zmq.Pull
+    - !Bind ipc:///tmp/paperjam-pull
+    monitor: !zmq.Push
+    - !Bind ipc:///tmp/paperjam-pipeline-mon
+
+  distrib:
+    frontend: !zmq.Pub
+      - !Bind ipc:///tmp/paperjam-pub
+    backend: !zmq.Sub
+      - !Bind ipc:///tmp/paperjam-sub
+    monitor: !zmq.Push
+    - !Bind ipc:///tmp/paperjam-distrib-mon
