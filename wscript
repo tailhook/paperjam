@@ -94,7 +94,7 @@ def run_tests(bld):
     bld.add_group()
     bld(rule='cd ${SRC[0].parent.parent.abspath()};'
         'PAPERJAM=${SRC[1].abspath()} CONFIGDIR=${SRC[0].parent.abspath()} '
-        'python -m unittest discover',
+        'python3 -m unittest discover',
         source=['test/test_zmq.py', 'paperjam'],
         always=True)
 
