@@ -12,7 +12,7 @@
 #define ASSERTERR(val) if((val) == -1) { \
     fprintf(stderr, "Assertion error at %s:%d: %s\n", \
         __FILE__, __LINE__, \
-        zmq_strerror(errno)); \
+        strerror(errno)); \
     abort(); \
     }
 
@@ -43,7 +43,7 @@ static int close_message(message *msg) {
 #endif
     }
     if(msg->xs) {
-#ifdef HAVE_ZMQ
+#ifdef HAVE_XS
         XS_ASSERTERR(xs_msg_close(&msg->xs_msg));
 #else
         assert(0);
@@ -202,7 +202,7 @@ int main(int argc, char **argv) {
                 open_xs_socket(&ctx, &item->value.frontend));
         } else {
             zmq_socks += 1;
-            XS_SOCKETERR(&item->value.frontend,
+            ZMQ_SOCKETERR(&item->value.frontend,
                 open_zmq_socket(&ctx, &item->value.frontend));
         }
 
@@ -214,7 +214,7 @@ int main(int argc, char **argv) {
                 open_xs_socket(&ctx, &item->value.backend));
         } else {
             zmq_socks += 1;
-            XS_SOCKETERR(&item->value.backend,
+            ZMQ_SOCKETERR(&item->value.backend,
                 open_zmq_socket(&ctx, &item->value.backend));
         }
         device_check(&item->value.frontend, &item->value.backend);
@@ -228,7 +228,7 @@ int main(int argc, char **argv) {
                     open_xs_socket(&ctx, &item->value.monitor));
             } else {
                 zmq_socks += 1;
-                XS_SOCKETERR(&item->value.monitor,
+                ZMQ_SOCKETERR(&item->value.monitor,
                     open_zmq_socket(&ctx, &item->value.monitor));
             }
             monitor_check(&item->value.monitor);

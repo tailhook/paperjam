@@ -10,6 +10,7 @@ class Wrapper(object):
 
     def __init__(self, sock):
         self.sock = sock
+        sock.setsockopt(zmq.LINGER, 0)
 
     def send_multipart(self, data):
         self.sock.send_multipart(data, zmq.DONTWAIT)
@@ -39,6 +40,6 @@ class Test(unittest.TestCase):
 
     def socket(self, kind, addr):
         res = self.ctx.socket(getattr(zmq, kind.upper()))
-        res.connect(addr)
         self.addCleanup(res.close)
+        res.connect(addr)
         return Wrapper(res)

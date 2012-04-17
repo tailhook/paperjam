@@ -25,8 +25,18 @@
 
 #else
 
-#define ZMQ_ASSERTERR(val) assert(0);
-#define ZMQ_SOCKETERR(sock, val) assert(0);
+#define ZMQ_SOCKETERR(sock, val) if((val) == -1) { \
+    fprintf(stderr, "Error on ``%s.%s'' at %s:%d: %s\n", \
+        (sock)->_name, (sock)->_type, __FILE__, __LINE__, \
+        strerror(errno)); \
+    abort(); \
+    }
+#define ZMQ_ASSERTERR(val) if((val) == -1) { \
+    fprintf(stderr, "Assertion error at %s:%d: %s\n", \
+        __FILE__, __LINE__, \
+        strerror(errno)); \
+    abort(); \
+    }
 
 #endif
 

@@ -5,8 +5,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include <zmq.h>
-
 #include "handle_zmq.h"
 
 #ifndef HAVE_ZMQ

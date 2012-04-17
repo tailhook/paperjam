@@ -18,15 +18,23 @@
 #define XS_SOCKETERR(sock, val) if((val) == -1) { \
     fprintf(stderr, "Error on ``%s.%s'' at %s:%d: %s\n", \
         (sock)->_name, (sock)->_type, __FILE__, __LINE__, \
-        zmq_strerror(errno)); \
+        xs_strerror(errno)); \
     abort(); \
     }
 
 
 #else
 
-#define XS_ASSERTERR(val) assert(0);
-#define XS_SOCKETERR(sock, val) assert(0);
+#define XS_ASSERTERR(val) if((val) == -1) { \
+    fprintf(stderr, "Assertion error" #val ": %s\n", strerror(errno)); \
+    abort(); \
+    }
+#define XS_SOCKETERR(sock, val) if((val) == -1) { \
+    fprintf(stderr, "Error on ``%s.%s'' at %s:%d: %s\n", \
+        (sock)->_name, (sock)->_type, __FILE__, __LINE__, \
+        strerror(errno)); \
+    abort(); \
+    }
 
 #endif
 

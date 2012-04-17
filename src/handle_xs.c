@@ -4,11 +4,10 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include <xs.h>
-
 #include "handle_xs.h"
 
 #ifndef HAVE_XS
+
 
 int open_xs_socket(context *ctx, config_socket_t *sock) {
     fprintf(stderr, "Paperjam was compiled without libxs support\n");
@@ -16,7 +15,7 @@ int open_xs_socket(context *ctx, config_socket_t *sock) {
     return -1;
 }
 
-#else
+#else  // HAVE_XS
 
 #define XS_MORENWAIT (XS_DONTWAIT|XS_SNDMORE)
 
