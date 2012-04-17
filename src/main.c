@@ -106,30 +106,42 @@ static int forward(context *ctx, config_socket_t *src, config_socket_t *tgt,
 static int iterate(context *ctx) {
     int res = 0;  // total number of messages done
     int iter;  // messages on single socket pair
+    int any;
     int rc;
     CONFIG_STRING_DEVICE_LOOP(item, ctx->config->Devices) {
         if(item->value.frontend._state.readable
            && item->value.backend._state.writeable) {
-            res = 1;
+            iter = 0;
             do {
+                any = 1;
+                iter += 1;
                 rc = forward(ctx,
                     &item->value.frontend,
                     &item->value.backend,
                     &item->value.monitor, "in");
                 assert(rc >= 0);
             } while(rc && iter < 100);
+            if(iter)
+                any = 1;
         }
         if(item->value.backend._state.readable
            && item->value.frontend._state.writeable) {
-            res = 1;
+            iter = 0;
             do {
+                iter += 1;
                 rc = forward(ctx,
                     &item->value.backend,
                     &item->value.frontend,
                     &item->value.monitor, "out");
                 assert(rc >= 0);
-                iter += rc;
             } while(rc && iter < 100);
+            if(iter)
+                any = 1;
+        }
+        if(any) {
+            item->value.frontend._impl->check_state(&item->value.frontend);
+            item->value.backend._impl->check_state(&item->value.backend);
+            res = 1;
         }
     }
     return res;
