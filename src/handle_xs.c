@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #include "handle_xs.h"
 
@@ -90,6 +91,8 @@ int open_xs_socket(context *ctx, config_socket_t *sock) {
             XS_SOCKETERR(sock, xs_connect(s, addr->value.value));
         }
     }
+    sock->_state.socket = s;
+
     if(type == XS_SUB) {
         if(sock->subscribe_len) {
             CONFIG_STRING_LOOP(topic, sock->subscribe) {
@@ -100,8 +103,82 @@ int open_xs_socket(context *ctx, config_socket_t *sock) {
             XS_SOCKETERR(sock, xs_setsockopt(s, XS_SUBSCRIBE, NULL, 0));
         }
     }
-    // TODO(tailhook) set socket options
-    sock->_state.socket = s;
+    int hwm = sock->sndhwm;
+    XS_SOCKETERR(sock, xs_setsockopt(sock->_state.socket,
+        XS_SNDHWM, &hwm, sizeof(hwm)));
+    hwm = sock->rcvhwm;
+    XS_SOCKETERR(sock, xs_setsockopt(sock->_state.socket,
+        XS_RCVHWM, &hwm, sizeof(hwm)));
+    if(sock->identity_len) {
+        char *identity = sock->identity;
+        XS_SOCKETERR(sock, xs_setsockopt(sock->_state.socket,
+            XS_IDENTITY, identity, sock->identity_len));
+    }
+    if(sock->affinity) {
+        uint64_t affinity = sock->affinity;
+        XS_SOCKETERR(sock, xs_setsockopt(sock->_state.socket,
+            XS_AFFINITY, &affinity, sizeof(affinity)));
+    }
+    if(sock->sndbuf) {
+        int sndbuf = sock->sndbuf;
+        XS_SOCKETERR(sock, xs_setsockopt(sock->_state.socket,
+            XS_SNDBUF, &sndbuf, sizeof(sndbuf)));
+    }
+    if(sock->rcvbuf) {
+        int rcvbuf = sock->rcvbuf;
+        XS_SOCKETERR(sock, xs_setsockopt(sock->_state.socket,
+            XS_RCVBUF, &rcvbuf, sizeof(rcvbuf)));
+    }
+    if(sock->linger) {
+        int linger = sock->linger;
+        XS_SOCKETERR(sock, xs_setsockopt(sock->_state.socket,
+            XS_LINGER, &linger, sizeof(linger)));
+    }
+    if(sock->rate) {
+        int rate = sock->rate;
+        XS_SOCKETERR(sock, xs_setsockopt(sock->_state.socket,
+            XS_RATE, &rate, sizeof(rate)));
+    }
+    if(sock->recovery_ivl) {
+        int ivl = sock->recovery_ivl;
+        XS_SOCKETERR(sock, xs_setsockopt(sock->_state.socket,
+            XS_RECOVERY_IVL, &ivl, sizeof(ivl)));
+    }
+    if(sock->reconnect_ivl) {
+        int ivl = sock->reconnect_ivl;
+        XS_SOCKETERR(sock, xs_setsockopt(sock->_state.socket,
+            XS_RECONNECT_IVL, &ivl, sizeof(ivl)));
+    }
+    if(sock->reconnect_ivl_max) {
+        int ivl = sock->reconnect_ivl_max;
+        XS_SOCKETERR(sock, xs_setsockopt(sock->_state.socket,
+            XS_RECONNECT_IVL_MAX, &ivl, sizeof(ivl)));
+    }
+    if(sock->backlog) {
+        int backlog = sock->backlog;
+        XS_SOCKETERR(sock, xs_setsockopt(sock->_state.socket,
+            XS_BACKLOG, &backlog, sizeof(backlog)));
+    }
+    if(sock->maxmsgsize) {
+        uint64_t maxmsg = sock->maxmsgsize;
+        XS_SOCKETERR(sock, xs_setsockopt(sock->_state.socket,
+            XS_MAXMSGSIZE, &maxmsg, sizeof(maxmsg)));
+    }
+    if(sock->multicast_hops) {
+        int mhops = sock->multicast_hops;
+        XS_SOCKETERR(sock, xs_setsockopt(sock->_state.socket,
+            XS_MULTICAST_HOPS, &mhops, sizeof(mhops)));
+    }
+    int ipv4only = sock->ipv4only;
+    XS_SOCKETERR(sock, xs_setsockopt(sock->_state.socket,
+        XS_IPV4ONLY, &ipv4only, sizeof(ipv4only)));
+#ifdef XS_KEEPALIVE
+    if(sock->keepalive) {
+        int keepalive = sock->keepalive;
+        XS_SOCKETERR(sock, xs_setsockopt(sock->_state.socket,
+            XS_KEEPALIVE, &keepalive, sizeof(keepalive)));
+    }
+#endif
     sock->_impl = &xs_socket_impl;
     return 0;
 }

@@ -35,12 +35,12 @@ __types__:
     __value__: !Array
         element: !Struct endpoint_type
     sndhwm: !UInt
-      =: 0
+      =: 1000
       description: >
         Zeromq/libxs high water mark for socket. Zero means no limit.
         Refer to zeromq/libxs documentation for details
     rcvhwm: !UInt
-      =: 0
+      =: 1000
       description: >
         Zeromq/libxs high water mark for socket. Zero means no limit. Refer
         to zeromq/libxs documentation for details
@@ -68,8 +68,52 @@ __types__:
       =: 10000
       description: >
         Amount of time zeromq/libxs tries to send messages already put into
-        the buffers. Zerogw/libxs will probably stay alive at most this amount
+        the buffers. Zeromq/libxs will probably stay alive at most this amount
         of time when got SIGTERM. Time is expressed in miliseconds
+    rate: !UInt
+      =: 100
+      description: >
+        Multicast data rate. Refer to zeromq/libxs documentation for details
+    recovery_ivl: !UInt
+      =: 10000
+      description: >
+        Multicast recovery interval. Refer to zeromq/libxs documentation for
+        details
+    reconnect_ivl: !UInt
+      =: 100
+      description: >
+        Reconnect interval for socket. Refer to zeromq/libxs documentation for
+        details
+    reconnect_ivl_max: !UInt
+      =: 0
+      description: >
+        Maximum reconnect interval. Refer to zeromq/libxs documentation for
+        details
+    backlog: !UInt
+      =: 0
+      description: >
+        Maximum queue of outstanding connections. Refer to operating system
+        documentation for the listen function.
+    maxmsgsize: !UInt
+      =: 0
+      description: >
+        Maximum message size. Refer to zeromq/libxs documentation for
+        details
+    multicast_hops: !Int
+      =: 1
+      description: >
+        Maximum network hops for multicast packets. Refer to zeromq/libxs
+        documentation for details
+    ipv4only: !Int
+      =: 1
+      description: >
+        Use IPv4 sockets. Refer to zeromq/libxs documentation for
+        details
+    keepalive: !Int
+      =: 1
+      description: >
+        Enables keepalive for TCP sockets. Refer to zeromq/libxs documentation
+        for details
     subscribe: !Array
       element: !String
       description: List of topics to subscribe to. Subscribes to
