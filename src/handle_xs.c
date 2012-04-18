@@ -129,11 +129,9 @@ int open_xs_socket(context *ctx, config_socket_t *sock) {
         XS_SOCKETERR(sock, xs_setsockopt(sock->_state.socket,
             XS_RCVBUF, &rcvbuf, sizeof(rcvbuf)));
     }
-    if(sock->linger) {
-        int linger = sock->linger;
-        XS_SOCKETERR(sock, xs_setsockopt(sock->_state.socket,
-            XS_LINGER, &linger, sizeof(linger)));
-    }
+    int linger = sock->linger;
+    XS_SOCKETERR(sock, xs_setsockopt(sock->_state.socket,
+        XS_LINGER, &linger, sizeof(linger)));
     if(sock->rate) {
         int rate = sock->rate;
         XS_SOCKETERR(sock, xs_setsockopt(sock->_state.socket,

@@ -37,13 +37,18 @@ __types__:
     sndhwm: !UInt
       =: 1000
       description: >
-        Zeromq/libxs high water mark for socket. Zero means no limit.
-        Refer to zeromq/libxs documentation for details
+        Libxs high water mark for socket. Zero means no limit.
+        Refer to libxs documentation for details
     rcvhwm: !UInt
       =: 1000
       description: >
-        Zeromq/libxs high water mark for socket. Zero means no limit. Refer
-        to zeromq/libxs documentation for details
+        Libxs high water mark for socket. Zero means no limit. Refer
+        to libxs documentation for details
+    hwm: !UInt
+      =: 1000
+      description: >
+        Zeromq high water mark for socket. Zero means no limit. Refer
+        to zeromq documentation for details
     identity: !String
       =: ""
       description: >
@@ -77,8 +82,8 @@ __types__:
     recovery_ivl: !UInt
       =: 10000
       description: >
-        Multicast recovery interval. Refer to zeromq/libxs documentation for
-        details
+        Multicast recovery interval in milliseconds. Refer to zeromq/libxs
+        documentation for details
     reconnect_ivl: !UInt
       =: 100
       description: >
@@ -97,23 +102,23 @@ __types__:
     maxmsgsize: !UInt
       =: 0
       description: >
-        Maximum message size. Refer to zeromq/libxs documentation for
+        Maximum message size. Only for libxs. Refer to libxs documentation for
         details
     multicast_hops: !Int
       =: 1
       description: >
-        Maximum network hops for multicast packets. Refer to zeromq/libxs
-        documentation for details
+        Maximum network hops for multicast packets. Only for libxs. Refer to
+        libxs documentation for details
     ipv4only: !Int
       =: 1
       description: >
-        Use IPv4 sockets. Refer to zeromq/libxs documentation for
+        Use IPv4 sockets. Only for libxs. Refer to libxs documentation for
         details
     keepalive: !Int
       =: 1
       description: >
-        Enables keepalive for TCP sockets. Refer to zeromq/libxs documentation
-        for details
+        Enables keepalive for TCP sockets. Only for libxs. Refer to libxs
+        documentation for details
     subscribe: !Array
       element: !String
       description: List of topics to subscribe to. Subscribes to

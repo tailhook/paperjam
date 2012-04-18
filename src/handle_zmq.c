@@ -89,6 +89,8 @@ int open_zmq_socket(context *ctx, config_socket_t *sock) {
             ZMQ_SOCKETERR(sock, zmq_connect(s, addr->value.value));
         }
     }
+    sock->_state.socket = s;
+
     if(type == ZMQ_SUB) {
         if(sock->subscribe_len) {
             CONFIG_STRING_LOOP(topic, sock->subscribe) {
@@ -99,8 +101,58 @@ int open_zmq_socket(context *ctx, config_socket_t *sock) {
             ZMQ_SOCKETERR(sock, zmq_setsockopt(s, ZMQ_SUBSCRIBE, NULL, 0));
         }
     }
-    // TODO(tailhook) set socket options
-    sock->_state.socket = s;
+    uint64_t hwm = sock->hwm;
+    ZMQ_SOCKETERR(sock, zmq_setsockopt(sock->_state.socket,
+        ZMQ_HWM, &hwm, sizeof(hwm)));
+    if(sock->identity_len) {
+        char *identity = sock->identity;
+        ZMQ_SOCKETERR(sock, zmq_setsockopt(sock->_state.socket,
+            ZMQ_IDENTITY, identity, sock->identity_len));
+    }
+    if(sock->affinity) {
+        uint64_t affinity = sock->affinity;
+        ZMQ_SOCKETERR(sock, zmq_setsockopt(sock->_state.socket,
+            ZMQ_AFFINITY, &affinity, sizeof(affinity)));
+    }
+    if(sock->sndbuf) {
+        uint64_t sndbuf = sock->sndbuf;
+        ZMQ_SOCKETERR(sock, zmq_setsockopt(sock->_state.socket,
+            ZMQ_SNDBUF, &sndbuf, sizeof(sndbuf)));
+    }
+    if(sock->rcvbuf) {
+        uint64_t rcvbuf = sock->rcvbuf;
+        ZMQ_SOCKETERR(sock, zmq_setsockopt(sock->_state.socket,
+            ZMQ_RCVBUF, &rcvbuf, sizeof(rcvbuf)));
+    }
+    int linger = sock->linger;
+    ZMQ_SOCKETERR(sock, zmq_setsockopt(sock->_state.socket,
+        ZMQ_LINGER, &linger, sizeof(linger)));
+    if(sock->rate) {
+        int64_t rate = sock->rate;
+        ZMQ_SOCKETERR(sock, zmq_setsockopt(sock->_state.socket,
+            ZMQ_RATE, &rate, sizeof(rate)));
+    }
+    if(sock->recovery_ivl) {
+        int64_t ivl = sock->recovery_ivl;
+        ZMQ_SOCKETERR(sock, zmq_setsockopt(sock->_state.socket,
+            ZMQ_RECOVERY_IVL_MSEC, &ivl, sizeof(ivl)));
+    }
+    if(sock->reconnect_ivl) {
+        int ivl = sock->reconnect_ivl;
+        ZMQ_SOCKETERR(sock, zmq_setsockopt(sock->_state.socket,
+            ZMQ_RECONNECT_IVL, &ivl, sizeof(ivl)));
+    }
+    if(sock->reconnect_ivl_max) {
+        int ivl = sock->reconnect_ivl_max;
+        ZMQ_SOCKETERR(sock, zmq_setsockopt(sock->_state.socket,
+            ZMQ_RECONNECT_IVL_MAX, &ivl, sizeof(ivl)));
+    }
+    if(sock->backlog) {
+        int backlog = sock->backlog;
+        ZMQ_SOCKETERR(sock, zmq_setsockopt(sock->_state.socket,
+            ZMQ_BACKLOG, &backlog, sizeof(backlog)));
+    }
+
     sock->_impl = &zmq_socket_impl;
     return 0;
 }
