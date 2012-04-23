@@ -65,6 +65,7 @@ static int forward(context *ctx, config_socket_t *src, config_socket_t *tgt,
     int rc = src->_impl->read_message(src, &msg);
     if(rc == -1) {
         if(errno == EAGAIN) {
+            src->_state.readable = 0;
             return 0;
         }
         ASSERTERR(rc);
