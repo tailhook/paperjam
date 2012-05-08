@@ -253,9 +253,9 @@ int main(int argc, char **argv) {
 
     CONFIG_STRING_DEVICE_LOOP(item, config->Devices) {
         item->value.frontend._impl->close(&item->value.frontend);
-        item->value.backend._impl->close(&item->value.frontend);
+        item->value.backend._impl->close(&item->value.backend);
         if(item->value.monitor._impl) {
-            item->value.monitor._impl->close(&item->value.frontend);
+            item->value.monitor._impl->close(&item->value.monitor);
         }
     }
 

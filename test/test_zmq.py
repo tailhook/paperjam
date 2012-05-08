@@ -1,3 +1,6 @@
+import subprocess
+import os
+
 from . import base
 from time import sleep
 
@@ -48,6 +51,7 @@ class TestZmq(base.Test):
 class TestZmqMon(TestZmq):
 
     COMMAND_LINE = ['$PAPERJAM', '-c', '$CONFIGDIR/zmqmon.yaml']
+    MON_CMDLINE = ['$PJMONITOR', '-c', '$CONFIGDIR/zmqmon.yaml']
 
     # Usual tests with unconnected monitor socket also here
 
@@ -99,6 +103,24 @@ class TestZmqMon(TestZmq):
             [b'out', b'world', b'hello'])
         self.assertEqual(sub.recv_multipart(),
             [b'world', b'hello'])
+
+    def testMonitor(self):
+        req = self.socket('REQ', 'ipc:///tmp/paperjam-rep')
+        rep = self.socket('REP', 'ipc:///tmp/paperjam-req')
+        mon = subprocess.Popen([os.path.expandvars(arg)
+                                for arg in self.MON_CMDLINE],
+                               stdout=subprocess.PIPE)
+        self.addCleanup(mon.terminate)
+        self.addCleanup(mon.stdout.close)
+        sleep(0.4)  # wait until sockets connect
+        req.send_multipart([b'hello', b'world'])
+        self.assertEqual(mon.stdout.readline(),
+            b"[reqrep] ``in'', ``'', ``'', ``hello'', ``world''\n")
+        self.assertEqual(rep.recv_multipart(),
+            [b'hello', b'world'])
+        rep.send_multipart([b'world', b'hello'])
+        self.assertEqual(mon.stdout.readline(),
+            b"[reqrep] ``out'', ``'', ``'', ``world'', ``hello''\n")
 
 
 class TestZmqXs(TestZmq):

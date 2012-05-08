@@ -50,6 +50,20 @@ def build(bld):
         lib          = ['coyaml', 'yaml'],
         use          = ['XS', 'ZMQ'],
         )
+    bld(
+        features     = ['c', 'cprogram', 'coyaml'],
+        source       = [
+            'src/devices.yaml',
+            'src/pjmonitor.c',
+            'src/handle_zmq.c',
+            'src/handle_xs.c',
+            ],
+        target       = 'pjmonitor',
+        includes     = ['src'],
+        cflags       = ['-std=gnu99', '-Wall'],
+        lib          = ['coyaml', 'yaml'],
+        use          = ['XS', 'ZMQ'],
+        )
 
 def dist(ctx):
     ctx.excl = [
@@ -93,8 +107,10 @@ def run_tests(bld):
     build(bld)
     bld.add_group()
     bld(rule='cd ${SRC[0].parent.parent.abspath()};'
-        'PAPERJAM=${SRC[1].abspath()} CONFIGDIR=${SRC[0].parent.abspath()} '
-        'python3 -m unittest discover',
-        source=['test/test_zmq.py', 'paperjam'],
+        'PAPERJAM=${SRC[1].abspath()} '
+        'PJMONITOR=${SRC[2].abspath()} '
+        'CONFIGDIR=${SRC[0].parent.abspath()} '
+        'python3 -m unittest discover -v',
+        source=['test/test_zmq.py', 'paperjam', 'pjmonitor'],
         always=True)
 

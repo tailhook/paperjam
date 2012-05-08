@@ -31,6 +31,7 @@ class Test(unittest.TestCase):
 
     def setUp(self):
         os.environ.setdefault("PAPERJAM", './build/paperjam')
+        os.environ.setdefault("PJMONITOR", './build/pjmonitor')
         os.environ.setdefault("CONFIGDIR", './test')
         self.proc = subprocess.Popen([os.path.expandvars(arg)
                                       for arg in self.COMMAND_LINE])
