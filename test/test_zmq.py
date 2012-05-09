@@ -122,6 +122,22 @@ class TestZmqMon(TestZmq):
         self.assertEqual(mon.stdout.readline(),
             b"[reqrep] ``out'', ``'', ``'', ``world'', ``hello''\n")
 
+    def testMonitorFilter(self):
+        req = self.socket('REQ', 'ipc:///tmp/paperjam-rep')
+        rep = self.socket('REP', 'ipc:///tmp/paperjam-req')
+        push = self.socket('PUSH', 'ipc:///tmp/paperjam-pull')
+        pull = self.socket('PULL', 'ipc:///tmp/paperjam-push')
+        mon = subprocess.Popen([os.path.expandvars(arg)
+                                for arg in self.MON_CMDLINE] + ['pipeline'],
+                               stdout=subprocess.PIPE)
+        self.addCleanup(mon.terminate)
+        self.addCleanup(mon.stdout.close)
+        sleep(0.4)  # wait until sockets connect
+        req.send_multipart([b'hello', b'world'])
+        push.send_multipart([b'test1', b'test2', b'test3'])
+        self.assertEqual(mon.stdout.readline(),
+            b"[pipeline] ``out'', ``test1'', ``test2'', ``test3''\n")
+
 
 class TestZmqXs(TestZmq):
 

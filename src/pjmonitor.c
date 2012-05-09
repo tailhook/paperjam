@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <poll.h>
+#include <getopt.h>
 
 #include "config.h"
 #include "handle_zmq.h"
@@ -116,6 +117,7 @@ void loop(context *ctx) {
     config_socket_t *sockets[maxpoll];
 
     CONFIG_STRING_DEVICE_LOOP(item, ctx->config->Devices) {
+        if(!item->value.monitor._impl) continue;
         config_socket_t *sock = &item->value.monitor;
         pollitems[nsocks].fd = sock->_impl->get_fd(sock);
         pollitems[nsocks].events = POLLIN;
@@ -165,6 +167,13 @@ int main(int argc, char **argv) {
     CONFIG_STRING_DEVICE_LOOP(item, config->Devices) {
         item->value.monitor._name = item->key;
         item->value.monitor._type = "monitor";
+        if(optind < argc) {
+            int i;
+            for(i = optind; i < argc; ++i) {
+                if(!strcmp(item->key, argv[i])) break;
+            }
+            if(i >= argc) continue;
+        }
         if(item->value.monitor.kind) {
             switch(item->value.monitor.kind) {
             case CONFIG_zmq_Push:
