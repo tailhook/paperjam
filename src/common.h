@@ -2,8 +2,7 @@
 #define _H_COMMON_
 
 #include "config.h"
-#include "config.h"
-#include "devices.h"
+#include CONFIG_HEADER
 
 #ifdef HAVE_XS
 #include <xs.h>

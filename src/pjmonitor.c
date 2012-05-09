@@ -7,7 +7,7 @@
 #include "config.h"
 #include "handle_zmq.h"
 #include "handle_xs.h"
-#include "devices.h"
+#include "pjmon.h"
 
 #define ASSERTERR(val) if((val) == -1) { \
     fprintf(stderr, "Assertion error at %s:%d: %s\n", \
@@ -159,6 +159,8 @@ int main(int argc, char **argv) {
     context ctx;
     memset(&ctx, 0, sizeof(ctx));
     ctx.config = config;
+    config->Zmq.io_threads = 1; // no need more threads for monitor
+    config->Xs.io_threads = 1; // no need more threads for monitor
 
     CONFIG_STRING_DEVICE_LOOP(item, config->Devices) {
         item->value.monitor._name = item->key;

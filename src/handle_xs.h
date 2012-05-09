@@ -1,7 +1,6 @@
 #ifndef _H_HANDLE_XS_
 #define _H_HANDLE_XS_
 
-#include "devices.h"
 #include "common.h"
 
 #define FLAG_LIBXS 0x200

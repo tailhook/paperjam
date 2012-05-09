@@ -2,7 +2,6 @@
 #define _H_HANDLE_ZMQ_
 
 #include "common.h"
-#include "devices.h"
 
 #define FLAG_LIBZMQ 0x100
 #define IS_ZMQ(sock) (((sock)->kind & LIB_MASK) == FLAG_LIBZMQ)

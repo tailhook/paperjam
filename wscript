@@ -3,6 +3,8 @@
 from waflib import Utils, Options, Errors
 from waflib.Build import BuildContext
 from waflib.Scripting import Dist
+from waflib.Task import Task
+from waflib.TaskGen import extension, before
 import subprocess
 import os.path
 
@@ -34,12 +36,25 @@ def configure(conf):
             "Either libzmq or libxs is required, none found")
     conf.write_config_header('src/config.h')
 
+
+class concat_config(Task):
+    run_str = 'cat ${SRC} ${SRC[0].parent.abspath()}/devices.yaml > ${TGT}'
+
+
+@extension('.prefix')
+@before('coyaml')
+def create_full_config(self, node):
+    yfile = node.change_ext('.yaml')
+    self.create_task('concat_config', node, yfile)
+    self.source.append(yfile)
+
+
 def build(bld):
     import coyaml.waf
     bld(
         features     = ['c', 'cprogram', 'coyaml'],
         source       = [
-            'src/devices.yaml',
+            'src/paperjam.prefix',
             'src/main.c',
             'src/handle_zmq.c',
             'src/handle_xs.c',
@@ -48,12 +63,15 @@ def build(bld):
         includes     = ['src'],
         cflags       = ['-std=gnu99', '-Wall'],
         lib          = ['coyaml', 'yaml'],
+        defines      = [
+            'CONFIG_HEADER="paperjam.h"',
+            ],
         use          = ['XS', 'ZMQ'],
         )
     bld(
         features     = ['c', 'cprogram', 'coyaml'],
         source       = [
-            'src/devices.yaml',
+            'src/pjmon.prefix',
             'src/pjmonitor.c',
             'src/handle_zmq.c',
             'src/handle_xs.c',
@@ -62,6 +80,9 @@ def build(bld):
         includes     = ['src'],
         cflags       = ['-std=gnu99', '-Wall'],
         lib          = ['coyaml', 'yaml'],
+        defines      = [
+            'CONFIG_HEADER="pjmon.h"',
+            ],
         use          = ['XS', 'ZMQ'],
         )
 

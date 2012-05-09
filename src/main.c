@@ -7,7 +7,7 @@
 #include "config.h"
 #include "handle_zmq.h"
 #include "handle_xs.h"
-#include "devices.h"
+#include "paperjam.h"
 
 #define ASSERTERR(val) if((val) == -1) { \
     fprintf(stderr, "Assertion error at %s:%d: %s\n", \

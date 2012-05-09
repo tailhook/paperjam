@@ -1,0 +1,7 @@
+__meta__:
+  program-name: pjmonitor
+  default-config: /etc/paperjam.yaml
+  description: Monitor utility for paperjam
+  has-arguments: yes
+  c_include:
+  - support.h

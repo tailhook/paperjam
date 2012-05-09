@@ -1,0 +1,6 @@
+__meta__:
+  program-name: paperjam
+  default-config: /etc/paperjam.yaml
+  description: Zeromq/libxs multipurpose device
+  c_include:
+  - support.h
