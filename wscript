@@ -30,7 +30,7 @@ def configure(conf):
                define_name='HAVE_XS',
                mandatory=False)
     conf.check(lib='xs', uselib_store='XS', mandatory=False)
-    conf.check(lib='zmq', uselib_store='XS', mandatory=False)
+    conf.check(lib='zmq', uselib_store='ZMQ', mandatory=False)
     if not conf.env['HAVE_ZMQ'] and not conf.env['HAVE_XS']:
         raise Errors.ConfigurationError(
             "Either libzmq or libxs is required, none found")
