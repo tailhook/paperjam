@@ -4,3 +4,4 @@
 /dist
 .boss*
 __pycache__
+*.tar.gz
