@@ -19,6 +19,9 @@ out = 'build'
 
 def options(opt):
     opt.load('compiler_c')
+    opt.add_option('--no-symlinks', dest="symlinks",
+        help="Do not add symlinks for pjutil (xspush, xspull, zmqpush, ...)",
+        default=True, action='store_false')
 
 def configure(conf):
     conf.load('compiler_c')
@@ -87,16 +90,37 @@ def build(bld):
         )
     bld(
         features     = ['c', 'cprogram'],
-        source       = [
-            'src/pjutil.c',
-            'src/xs_cli.c',
-            'src/zmq_cli.c',
-            ],
+        source       = ['src/pjutil.c']
+            + (['src/xs_cli.c'] if 'LIB_XS' in bld.env else [])
+            + (['src/zmq_cli.c'] if 'LIB_ZMQ' in bld.env else [])
+            ,
         target       = 'pjutil',
         includes     = ['src'],
         cflags       = ['-std=gnu99', '-Wall'],
         use          = ['XS', 'ZMQ'],
         )
+    if bld.options.symlinks:
+        symlinks = []
+        if 'LIB_ZMQ' in bld.env:
+            symlinks += [
+                'zmqpush',
+                'zmqpull',
+                'zmqpub',
+                'zmqsub',
+                'zmqreq',
+                'zmqrep',
+                ]
+        if 'LIB_XS' in bld.env:
+            symlinks += [
+                'xspush',
+                'xspull',
+                'xspub',
+                'xssub',
+                'xsreq',
+                'xsrep',
+                ]
+        for sym in symlinks:
+            bld.symlink_as('${PREFIX}/bin/'+sym, 'pjutil')
 
 def dist(ctx):
     ctx.excl = [
