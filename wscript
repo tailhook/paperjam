@@ -85,6 +85,18 @@ def build(bld):
             ],
         use          = ['XS', 'ZMQ'],
         )
+    bld(
+        features     = ['c', 'cprogram'],
+        source       = [
+            'src/pjutil.c',
+            'src/xs_cli.c',
+            'src/zmq_cli.c',
+            ],
+        target       = 'pjutil',
+        includes     = ['src'],
+        cflags       = ['-std=gnu99', '-Wall'],
+        use          = ['XS', 'ZMQ'],
+        )
 
 def dist(ctx):
     ctx.excl = [
