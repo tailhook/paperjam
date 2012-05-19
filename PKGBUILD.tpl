@@ -8,10 +8,8 @@ arch=('i686' 'x86_64')
 url="http://github.com/tailhook/paperjam"
 license=('MIT')
 # You can remove zeromq or libxs from dependencies
-# And also remove `check` function as both are tested
 depends=('zeromq' 'libxs')
-# python-pyzmq is needed only for tests
-makedepends=('coyaml' 'python-pyzmq')
+makedepends=('coyaml')
 source=(https://github.com/downloads/tailhook/paperjam/$pkgname-$pkgver.tar.gz)
 md5sums=('${DIST_MD5}')
 
