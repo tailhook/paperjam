@@ -5,10 +5,11 @@
 
 #include <xs.h>
 
+#include "config.h"
 #include "pjutil.h"
 
 static void *open_context() {
-    return xs_init(1);
+    return xs_init();
 }
 
 static void configure_socket(void *sock) {
@@ -92,10 +93,10 @@ void run_xs_pub() {
     writer_socket(XS_PUB);
 }
 
-void run_xs_req() {
+static void request(int type) {
     void *ctx = open_context();
     assert(ctx);
-    void *sock = xs_socket(ctx, XS_REQ);
+    void *sock = xs_socket(ctx, type);
     assert(sock);
     configure_socket(sock);
     for(char **m = cli_options.messages; *m; ++m) {
@@ -104,10 +105,12 @@ void run_xs_req() {
     }
     uint64_t more = 1;
     size_t moresz = sizeof(more);
-    while(more) {
+    while(1) {
         xs_msg_t msg;
         xs_msg_init(&msg);
         int rc = xs_recvmsg(sock, &msg, 0);
+        if(rc == -1 && errno == EFSM)
+            break;
         assert(rc != -1);
         rc = xs_getsockopt(sock, XS_RCVMORE, &more, &moresz);
         assert(rc != -1);
@@ -118,10 +121,10 @@ void run_xs_req() {
     xs_term(ctx);
 }
 
-void run_xs_rep() {
+static void reply(int type) {
     void *ctx = open_context();
     assert(ctx);
-    void *sock = xs_socket(ctx, XS_REP);
+    void *sock = xs_socket(ctx, type);
     assert(sock);
     configure_socket(sock);
     while(1) {
@@ -146,4 +149,25 @@ void run_xs_rep() {
     xs_close(sock);
     xs_term(ctx);
 }
+
+
+void run_xs_req() {
+    request(XS_REQ);
+}
+
+void run_xs_rep() {
+    reply(XS_REP);
+}
+
+# ifdef HAVE_SURVEY
+void run_xs_surveyor() {
+    request(XS_SURVEYOR);
+}
+
+void run_xs_respondent() {
+    reply(XS_RESPONDENT);
+}
+
+# endif
+
 

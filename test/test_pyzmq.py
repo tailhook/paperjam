@@ -12,6 +12,7 @@ class Any(object):
 
 class TestZmq(base.PyzmqTest):
 
+    check_env = ['HAVE_ZMQ']
     COMMAND_LINE = ['$PAPERJAM', '-c', '$CONFIGDIR/zmq.yaml']
 
     def testReq(self):
@@ -141,5 +142,5 @@ class TestZmqMon(TestZmq):
 
 class TestZmqXs(TestZmq):
 
-    lib = 'both'
+    check_env = ['HAVE_ZMQ', 'HAVE_XS']
     COMMAND_LINE = ['$PAPERJAM', '-c', '$CONFIGDIR/zmqxs.yaml']

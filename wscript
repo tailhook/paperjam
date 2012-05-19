@@ -26,14 +26,27 @@ def options(opt):
 def configure(conf):
     conf.load('compiler_c')
     conf.define('PAPERJAM_VERSION', VERSION)
-    conf.check(header_name='zmq.h',
-               define_name='HAVE_ZMQ',
-               mandatory=False)
-    conf.check(header_name='xs.h',
-               define_name='HAVE_XS',
-               mandatory=False)
-    conf.check(lib='xs', uselib_store='XS', mandatory=False)
-    conf.check(lib='zmq', uselib_store='ZMQ', mandatory=False)
+    conf.env['have_xs'] = conf.check(
+        lib='xs',
+        uselib_store='XS',
+        define_name='HAVE_XS',
+        mandatory=False,
+        )
+    conf.env['have_zmq'] = conf.check(
+        lib='zmq',
+        uselib_store='ZMQ',
+        define_name='HAVE_ZMQ',
+        mandatory=False,
+        )
+    if conf.env['HAVE_XS']:
+        conf.env['have_survey'] = conf.check(
+            msg="Checking for survey pattern", fragment="""
+            #include <xs.h>
+            int main() {
+                return XS_SURVEYOR;
+            }
+            """, define_name='HAVE_SURVEY', mandatory=False)
+
     if not conf.env['HAVE_ZMQ'] and not conf.env['HAVE_XS']:
         raise Errors.ConfigurationError(
             "Either libzmq or libxs is required, none found")
@@ -101,7 +114,7 @@ def build(bld):
         )
     if bld.options.symlinks:
         symlinks = []
-        if 'LIB_ZMQ' in bld.env:
+        if bld.env['have_zmq']:
             symlinks += [
                 'zmqpush',
                 'zmqpull',
@@ -110,7 +123,7 @@ def build(bld):
                 'zmqreq',
                 'zmqrep',
                 ]
-        if 'LIB_XS' in bld.env:
+        if bld.env['have_xs']:
             symlinks += [
                 'xspush',
                 'xspull',
@@ -119,6 +132,11 @@ def build(bld):
                 'xsreq',
                 'xsrep',
                 ]
+            if bld.env['have_survey']:
+                symlinks += [
+                    'xssurveyor',
+                    'xsrespondent',
+                    ]
         for sym in symlinks:
             bld.symlink_as('${PREFIX}/bin/'+sym, 'pjutil')
 
@@ -163,15 +181,17 @@ class test(BuildContext):
 def run_tests(bld):
     build(bld)
     bld.add_group()
-    libxs = 'yes' if bld.env['LIB_XS'] else ''
-    libzmq = 'yes' if bld.env['LIB_ZMQ'] else ''
+    libxs = 'yes' if bld.env['have_xs'] else ''
+    libzmq = 'yes' if bld.env['have_zmq'] else ''
+    havesurv = 'yes' if bld.env['have_survey'] else ''
     bld(rule='cd ${SRC[0].parent.parent.abspath()};'
         ' PAPERJAM=${SRC[1].abspath()} '
         ' PJMONITOR=${SRC[2].abspath()} '
         ' PJUTIL=${SRC[3].abspath()} '
         ' CONFIGDIR=${SRC[0].parent.abspath()} '
-        ' LIB_XS='+libxs+
-        ' LIB_ZMQ='+libzmq+
+        ' HAVE_XS='+libxs+
+        ' HAVE_ZMQ='+libzmq+
+        ' HAVE_SURVEY='+havesurv+
         ' python3 -m unittest discover -v',
         source=['test/base.py', 'paperjam', 'pjmonitor', 'pjutil'],
         always=True)

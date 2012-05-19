@@ -24,6 +24,8 @@ __types__:
       xs.Pull: 0x204
       xs.Pub: 0x205
       xs.Sub: 0x206
+      xs.Surveyor: 0x207
+      xs.Respondent: 0x208
     __value__: !Array
         element: !Struct endpoint_type
     sndhwm: !UInt

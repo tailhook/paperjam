@@ -41,6 +41,33 @@ class TestZmq(base.FullCliTest):
         self.assertEqual(sub2.read(),
             b'"msg" "2" "3"\n')
 
+class TestSurvey(base.FullCliTest):
+    lib = 'xs'
+    check_env = ['HAVE_SURVEY']
+    COMMAND_LINE = ['$PAPERJAM', '-c', '$CONFIGDIR/survey.yaml']
+
+    def testSurvey(self):
+        rep1 = self.pjutil('RESPONDENT',
+            'ipc:///tmp/paperjam-surveyor', 'one')
+        rep2 = self.pjutil('RESPONDENT',
+            'ipc:///tmp/paperjam-surveyor', 'two')
+
+        req = self.pjutil('SURVEYOR',
+            'ipc:///tmp/paperjam-respondent', 'hello')
+        self.assertEqual(rep1.read(), b'"hello"\n')
+        self.assertEqual(rep2.read(), b'"hello"\n')
+        sleep(0.1)
+        self.assertIn(req.read(),
+            (b'"one"\n"two"\n', b'"two"\n"one"\n'))
+
+        req = self.pjutil('SURVEYOR',
+            'ipc:///tmp/paperjam-respondent', 'hello2')
+        self.assertEqual(rep1.read(), b'"hello2"\n')
+        self.assertEqual(rep2.read(), b'"hello2"\n')
+        sleep(0.1)
+        self.assertIn(req.read(),
+            (b'"one"\n"two"\n', b'"two"\n"one"\n'))
+
 
 class TestZmq2(base.AliasCliTest, TestZmq):
     pass
@@ -48,8 +75,15 @@ class TestZmq2(base.AliasCliTest, TestZmq):
 
 class TestXs(TestZmq):
     lib = 'xs'
+    check_env = ['HAVE_XS']
     COMMAND_LINE = ['$PAPERJAM', '-c', '$CONFIGDIR/xs.yaml']
 
 class TestXs2(TestZmq2):
     lib = 'xs'
+    check_env = ['HAVE_XS']
     COMMAND_LINE = ['$PAPERJAM', '-c', '$CONFIGDIR/xs.yaml']
+
+class TestSurvey2(base.AliasCliTest, TestSurvey):
+    lib = 'xs'
+    check_env = ['HAVE_SURVEY']
+    COMMAND_LINE = ['$PAPERJAM', '-c', '$CONFIGDIR/survey.yaml']

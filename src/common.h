@@ -26,9 +26,11 @@
 #define IS_WRITEABLE(sock) (IS_WRITEONLY(sock) || IS_REQ(sock) || IS_REP(sock))
 #define IS_REQ(sock) ((sock)->kind == CONFIG_zmq_Req \
                            || (sock)->kind == CONFIG_xs_Req \
+                           || (sock)->kind == CONFIG_xs_Surveyor \
                            )
 #define IS_REP(sock) ((sock)->kind == CONFIG_zmq_Rep \
                            || (sock)->kind == CONFIG_xs_Rep \
+                           || (sock)->kind == CONFIG_xs_Respondent \
                            )
 
 typedef struct message {

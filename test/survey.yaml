@@ -1,0 +1,8 @@
+Devices:
+  survey:
+    frontend: !xs.Respondent
+      - !Bind ipc:///tmp/paperjam-respondent
+    backend: !xs.Surveyor
+      - !Bind ipc:///tmp/paperjam-surveyor
+
+  # TODO(tailhook) test survey in combination with req/rep (?)

@@ -54,18 +54,13 @@ class ProcessWrapper(object):
 
 class BaseTest(unittest.TestCase):
 
-    lib = 'zmq'
+    check_env = []
     COMMAND_LINE = ['$PAPERJAM', '-c', '$CONFIGDIR/zmq.yaml']
 
     def setUp(self):
-        if self.lib == 'both':
-            if not os.environ.get('LIB_XS'):
-                raise unittest.case.SkipTest("No libxs")
-            if not os.environ.get('LIB_ZMQ'):
-                raise unittest.case.SkipTest("No libzmq")
-        else:
-            if not os.environ.get('LIB_'+self.lib.upper()):
-                raise unittest.case.SkipTest("No lib" + self.lib)
+        for i in self.check_env:
+            if not os.environ.get(i):
+                raise unittest.case.SkipTest("No "+i)
         os.environ.setdefault("PAPERJAM", './build/paperjam')
         os.environ.setdefault("PJMONITOR", './build/pjmonitor')
         os.environ.setdefault("PJUTIL", './build/pjutil')

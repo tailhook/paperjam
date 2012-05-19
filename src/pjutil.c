@@ -28,6 +28,10 @@ struct {
     {"XS", run_xs_pub},
     {"XR", run_xs_req},
     {"Xr", run_xs_rep},
+# ifdef HAVE_SURVEY
+    {"XU", run_xs_surveyor},
+    {"Xu", run_xs_respondent},
+# endif
 # endif
 # if HAVE_ZMQ
     {"Zp", run_zmq_pull},
@@ -54,6 +58,10 @@ struct option long_options[] = {
     {"pub", 0, NULL, 'S'},
     {"req", 0, NULL, 'R'},
     {"rep", 0, NULL, 'r'},
+# ifdef HAVE_SURVEY
+    {"surveyor", 0, NULL, 'U'},
+    {"respondent", 0, NULL, 'u'},
+# endif
     {"bind", 1, NULL, 'b'},
     {"connect", 1, NULL, 'c'},
     {"help", 0, NULL, 'h'},
@@ -63,26 +71,37 @@ struct option long_options[] = {
 
 void print_usage(FILE *stream, char *arg0) {
     fprintf(stream, "Usage:\n");
+    char *stype = "{--push|--pull"
+        "|--pub|--sub"
+        "|--req|--rep"
+# if HAVE_SURVEY
+        "|--surveyor|--respondent"
+# endif
+        "}";
     if(cli_options.arg0_lib && cli_options.arg0_sock) {
         fprintf(stream, "  %s {--bind|--connect} ADDR [msg1 [msg2 ...]]\n",
             arg0);
     } else if(cli_options.arg0_lib) {
-        fprintf(stream, "  %s {--push|--pull|--pub|--sub|--req|--rep}\\\n"
-        "    {--bind|--connect} ADDR [msg1 [msg2 ...]]\n", arg0);
+        if(cli_options.arg0_lib == 'X') {
+            // zmq has no surveyor
+            stype = "{--push|--pull|--pub|--sub|--req|--rep}";
+        }
+        fprintf(stream, "  %s %s\\\n"
+        "    {--bind|--connect} ADDR [msg1 [msg2 ...]]\n", arg0, stype);
     } else if(cli_options.arg0_sock) {
         fprintf(stream, "  %s [--zmq|--xs] "
                         "{--bind|--connect} ADDR [msg1 [msg2 ...]]\n", arg0);
     } else {
 # if defined(HAVE_ZMQ) && defined(HAVE_XS)
         fprintf(stream,
-            "  %s [--zmq|--xs] {--push|--pull|--pub|--sub|--req|--rep} \\\n"
+            "  %s [--zmq|--xs] %s \\\n"
             "    {--bind|--connect} ADDR [options] [msg1 [msg2 ...]]\n",
-            arg0);
+            arg0, stype);
 # else
         fprintf(stream,
-            "  %s {--push|--pull|--pub|--sub|--req|--rep} \\\n"
+            "  %s %s\\\n"
             "    {--bind|--connect} ADDR [options] [msg1 [msg2 ...]]\n",
-            arg0);
+            arg0, stype);
 # endif
     }
     fprintf(stream, "\n"
@@ -103,16 +122,19 @@ void print_usage(FILE *stream, char *arg0) {
     }
 # endif
     fprintf(stream,
-        " -p,--pull  Open PULL socket and print all incoming data\n"
-        " -P,--push  Open PUSH socket and push messages\n"
-        " -S,--pub   Open PUB socket and publish messages\n"
-        " -s,--sub   Open SUB socket and print all incoming data\n"
-        " -R,--req   Open REQ socket and send a request\n"
-        " -r,--rep   Open REP socket and answer requests with same data\n"
-        " -b,--bind ADDR\n"
-        "            Bind socket to address. ADDR is zeromq/libxs address\n"
+        " -p,--pull       Open PULL socket and print all incoming data\n"
+        " -P,--push       Open PUSH socket and push messages\n"
+        " -S,--pub        Open PUB socket and publish messages\n"
+        " -s,--sub        Open SUB socket and print all incoming data\n"
+        " -R,--req        Open REQ socket and send a request\n"
+        " -r,--rep        Open REP socket and answer requests with same data\n"
+        " -U,--surveyor   Open SURVEYOR socket and send a request"
+                          " (if supported)\n"
+        " -u,--respondent Open RESPONDENT socket and answer requests"
+                          " (if supported)\n"
+        " -b,--bind ADDR  Bind socket to address. ADDR is zeromq/libxs address\n"
         " -c,--connect ADDR\n"
-        "            Connect socket to address. ADDR is zeromq/libxs address\n"
+        "                 Connect socket to address. ADDR is zeromq/libxs address\n"
         "\n"
         );
 }
@@ -159,6 +181,10 @@ void parse_arg0(char *arg0) {
         cli_options.arg0_sock = 'R';
     } else if(strstr(arg0, "rep")) {
         cli_options.arg0_sock = 'r';
+    } else if(strstr(arg0, "surveyor")) {
+        cli_options.arg0_sock = 'U';
+    } else if(strstr(arg0, "respondent")) {
+        cli_options.arg0_sock = 'u';
     }
 }
 
@@ -176,6 +202,7 @@ void parse_options(int argc, char **argv) {
         case 'p': case 'P':
         case 's': case 'S':
         case 'r': case 'R':
+        case 'u': case 'U':
             cli_options.sock = opt;
             break;
         case 'h':

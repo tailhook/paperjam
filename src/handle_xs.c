@@ -77,6 +77,21 @@ int open_xs_socket(context *ctx, config_socket_t *sock) {
     case CONFIG_xs_Pull:
         type = XS_PULL;
         break;
+# ifdef HAVE_SURVEY
+    case CONFIG_xs_Surveyor:
+        type = XS_XSURVEYOR;
+        break;
+    case CONFIG_xs_Respondent:
+        type = XS_XRESPONDENT;
+        break;
+# else
+    // TODO(tailhook) check this at configuration parsing stage
+    case CONFIG_xs_Surveyor:
+    case CONFIG_xs_Respondent:
+        fprintf(stderr, "Survey pattern is not supported by libxs 1.0\n");
+        errno = ENOTSUP;
+        return -1;
+# endif
     default:
         assert(0);
         break;
