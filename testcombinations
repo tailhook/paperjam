@@ -1,0 +1,32 @@
+#!/bin/bash -e
+
+# Latest, full featured version
+yaourt -S --noconfirm zeromq
+yaourt -U --noconfirm ~/src/crossroads-io/crossroads-io-1.1.0-1-x86_64.pkg.tar.xz
+./waf configure --prefix=/usr
+./waf clean test
+
+# With older libxs
+yaourt -U --noconfirm ~/src/crossroads-io/crossroads-io-1.0.0-1-x86_64.pkg.tar.xz
+./waf configure --prefix=/usr
+./waf clean test
+
+# Without libxs
+yaourt -Rdd --noconfirm crossroads-io
+./waf configure --prefix=/usr
+./waf clean test
+
+# Without zeromq
+yaourt -U --noconfirm ~/src/crossroads-io/crossroads-io-1.1.0-1-x86_64.pkg.tar.xz
+yaourt -Rdd --noconfirm zeromq
+./waf configure --prefix=/usr
+./waf clean test
+
+# Without zeromq with old libxs
+yaourt -U --noconfirm ~/src/crossroads-io/crossroads-io-1.0.0-1-x86_64.pkg.tar.xz
+./waf configure --prefix=/usr
+./waf clean test
+
+# Lets install new versions back
+yaourt -S --noconfirm zeromq
+yaourt -U --noconfirm ~/src/crossroads-io/crossroads-io-1.1.0-1-x86_64.pkg.tar.xz
