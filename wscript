@@ -111,6 +111,7 @@ def build(bld):
         includes     = ['src'],
         cflags       = ['-std=gnu99', '-Wall'],
         use          = ['XS', 'ZMQ'],
+        lib          = ['rt'],
         )
     if bld.options.symlinks:
         symlinks = []

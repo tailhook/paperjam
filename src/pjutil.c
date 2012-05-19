@@ -3,6 +3,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <config.h>
+#include <time.h>
+#include <assert.h>
 #include "pjutil.h"
 #ifdef HAVE_XS
 #include <xs.h>
@@ -44,7 +46,7 @@ struct {
     {"\0\0", NULL}
 };
 
-char *short_options = "hZXpPsSrRb:c:";
+char *short_options = "hZXpPsSrRb:c:t:";
 struct option long_options[] = {
 # ifdef HAVE_ZMQ
     {"zmq", 0, NULL, 'Z'},
@@ -64,6 +66,7 @@ struct option long_options[] = {
 # endif
     {"bind", 1, NULL, 'b'},
     {"connect", 1, NULL, 'c'},
+    {"timeout", 1, NULL, 't'},
     {"help", 0, NULL, 'h'},
     {NULL, 0, NULL, 0}
     };
@@ -135,6 +138,8 @@ void print_usage(FILE *stream, char *arg0) {
         " -b,--bind ADDR  Bind socket to address. ADDR is zeromq/libxs address\n"
         " -c,--connect ADDR\n"
         "                 Connect socket to address. ADDR is zeromq/libxs address\n"
+        " -t,--timeout SEC\n"
+        "                 Maximum time process runs, in seconds\n"
         "\n"
         );
 }
@@ -146,6 +151,13 @@ void print_message(char *msg, size_t len, int more) {
         printf("\"%.*s\"\n", (int)len, msg);
         fflush(stdout);
     }
+}
+
+double get_time() {
+    struct timespec ts;
+    int rc = clock_gettime(CLOCK_MONOTONIC, &ts);
+    assert(rc != -1);
+    return (double)ts.tv_sec  + ts.tv_nsec*0.000000001;
 }
 
 void clear_options(int argc, char **argv) {
@@ -161,6 +173,8 @@ void clear_options(int argc, char **argv) {
     cli_options.messages = NULL;
     cli_options.argc = argc;
     cli_options.argv = argv;
+    cli_options.timeout = 0.0;
+    cli_options.finishtime = 1e20;
 }
 
 void parse_arg0(char *arg0) {
@@ -198,6 +212,10 @@ void parse_options(int argc, char **argv) {
             break;
         case 'X':
             cli_options.lib = 'X';
+            break;
+        case 't':
+            cli_options.timeout = strtod(optarg, NULL);
+            cli_options.finishtime = get_time() + cli_options.timeout;
             break;
         case 'p': case 'P':
         case 's': case 'S':
