@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdio.h>
 
 #include <xs.h>
 
@@ -62,6 +63,11 @@ static void writer_socket(int type) {
     void *sock = xs_socket(ctx, type);
     assert(sock);
     configure_socket(sock);
+    if(type == XS_PUB) {
+        // Let's wait for subscriptions to be forwarded
+        // TODO(pc) make this interval customizable
+        xs_poll(NULL, 0, 100);
+    }
     for(char **m = cli_options.messages; *m; ++m) {
         int rc = xs_send(sock, *m, strlen(*m), *(m+1) ? XS_SNDMORE : 0);
         assert(rc != -1);
@@ -119,16 +125,18 @@ void run_xs_rep() {
     assert(sock);
     configure_socket(sock);
     while(1) {
-        xs_msg_t msg;
-        xs_msg_init(&msg);
-        int rc = xs_recvmsg(sock, &msg, 0);
-        assert(rc != -1);
-        uint64_t more = 0;
+        uint64_t more = 1;
         size_t moresz = sizeof(more);
-        rc = xs_getsockopt(sock, XS_RCVMORE, &more, &moresz);
-        assert(rc != -1);
-        print_message(xs_msg_data(&msg), xs_msg_size(&msg), more);
-        xs_msg_close(&msg);
+        while(more) {
+            xs_msg_t msg;
+            xs_msg_init(&msg);
+            int rc = xs_recvmsg(sock, &msg, 0);
+            assert(rc != -1);
+            rc = xs_getsockopt(sock, XS_RCVMORE, &more, &moresz);
+            assert(rc != -1);
+            print_message(xs_msg_data(&msg), xs_msg_size(&msg), more);
+            xs_msg_close(&msg);
+        }
 
         for(char **m = cli_options.messages; *m; ++m) {
             int rc = xs_send(sock, *m, strlen(*m), *(m+1) ? XS_SNDMORE : 0);

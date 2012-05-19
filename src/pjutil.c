@@ -97,7 +97,7 @@ void print_usage(FILE *stream, char *arg0) {
 # ifdef HAVE_XS
     if(cli_options.defaultlib == 'X') {
         fprintf(stream,
-            " -X,--xs   Open crossroads IO (libxs) socket (default)\n");
+            " -X,--xs    Open crossroads IO (libxs) socket (default)\n");
     } else {
         fprintf(stream, " -X,--xs   Open crossroads IO (libxs) socket\n");
     }
@@ -122,6 +122,7 @@ void print_message(char *msg, size_t len, int more) {
         printf("\"%.*s\" ", (int)len, msg);
     } else {
         printf("\"%.*s\"\n", (int)len, msg);
+        fflush(stdout);
     }
 }
 
@@ -191,6 +192,9 @@ void parse_options(int argc, char **argv) {
 int main(int argc, char **argv) {
 
     clear_options(argc, argv);
+    char *arg0 = strrchr(argv[0], '/');
+    if(arg0) arg0 += 1;
+    else arg0 = argv[0];
     parse_arg0(argv[0]);
     parse_options(argc, argv);
 

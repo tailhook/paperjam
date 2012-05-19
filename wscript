@@ -163,11 +163,16 @@ class test(BuildContext):
 def run_tests(bld):
     build(bld)
     bld.add_group()
+    libxs = 'yes' if bld.env['LIB_XS'] else ''
+    libzmq = 'yes' if bld.env['LIB_ZMQ'] else ''
     bld(rule='cd ${SRC[0].parent.parent.abspath()};'
-        'PAPERJAM=${SRC[1].abspath()} '
-        'PJMONITOR=${SRC[2].abspath()} '
-        'CONFIGDIR=${SRC[0].parent.abspath()} '
-        'python3 -m unittest discover -v',
-        source=['test/test_zmq.py', 'paperjam', 'pjmonitor'],
+        ' PAPERJAM=${SRC[1].abspath()} '
+        ' PJMONITOR=${SRC[2].abspath()} '
+        ' PJUTIL=${SRC[3].abspath()} '
+        ' CONFIGDIR=${SRC[0].parent.abspath()} '
+        ' LIB_XS='+libxs+
+        ' LIB_ZMQ='+libzmq+
+        ' python3 -m unittest discover -v',
+        source=['test/base.py', 'paperjam', 'pjmonitor', 'pjutil'],
         always=True)
 

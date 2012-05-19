@@ -10,7 +10,7 @@ class Any(object):
         return True
 
 
-class TestZmq(base.Test):
+class TestZmq(base.PyzmqTest):
 
     COMMAND_LINE = ['$PAPERJAM', '-c', '$CONFIGDIR/zmq.yaml']
 
@@ -141,4 +141,5 @@ class TestZmqMon(TestZmq):
 
 class TestZmqXs(TestZmq):
 
+    lib = 'both'
     COMMAND_LINE = ['$PAPERJAM', '-c', '$CONFIGDIR/zmqxs.yaml']

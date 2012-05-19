@@ -1,0 +1,18 @@
+Devices:
+  reqrep:
+    frontend: !xs.Rep
+      - !Bind ipc:///tmp/paperjam-rep
+    backend: !xs.Req
+      - !Bind ipc:///tmp/paperjam-req
+
+  pipeline:
+    frontend: !xs.Push
+      - !Bind ipc:///tmp/paperjam-push
+    backend: !xs.Pull
+      - !Bind ipc:///tmp/paperjam-pull
+
+  distrib:
+    frontend: !xs.Pub
+      - !Bind ipc:///tmp/paperjam-pub
+    backend: !xs.Sub
+      - !Bind ipc:///tmp/paperjam-sub

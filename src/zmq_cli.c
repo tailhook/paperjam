@@ -123,16 +123,18 @@ void run_zmq_rep() {
     assert(sock);
     configure_socket(sock);
     while(1) {
-        zmq_msg_t msg;
-        zmq_msg_init(&msg);
-        int rc = zmq_recv(sock, &msg, 0);
-        assert(rc != -1);
-        uint64_t more = 0;
+        uint64_t more = 1;
         size_t moresz = sizeof(more);
-        rc = zmq_getsockopt(sock, ZMQ_RCVMORE, &more, &moresz);
-        assert(rc != -1);
-        print_message(zmq_msg_data(&msg), zmq_msg_size(&msg), more);
-        zmq_msg_close(&msg);
+        while(more) {
+            zmq_msg_t msg;
+            zmq_msg_init(&msg);
+            int rc = zmq_recv(sock, &msg, 0);
+            assert(rc != -1);
+            rc = zmq_getsockopt(sock, ZMQ_RCVMORE, &more, &moresz);
+            assert(rc != -1);
+            print_message(zmq_msg_data(&msg), zmq_msg_size(&msg), more);
+            zmq_msg_close(&msg);
+        }
 
         for(char **m = cli_options.messages; *m; ++m) {
             zmq_msg_t msg;
