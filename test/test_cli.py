@@ -3,6 +3,7 @@ from time import sleep
 from . import base
 
 class TestZmq(base.FullCliTest):
+    check_env = ['HAVE_ZMQ']
 
     def testReq(self):
         rep = self.pjutil('REP', 'ipc:///tmp/paperjam-req', 'world', 'hello')
