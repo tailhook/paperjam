@@ -33,14 +33,16 @@ static void configure_socket(void *sock) {
 }
 
 static int do_receive(void *sock, xs_msg_t *msg) {
-    xs_pollitem_t item = {sock, 0, XS_POLLIN, 0 };
+    int rc = 0;
     while(get_time() < cli_options.finishtime) {
-        int left = -1;
         if(cli_options.timeout) {
-            left = (int)((cli_options.finishtime - get_time())*1000);
+            int left = (int)((cli_options.finishtime - get_time())*1000);
+            //  Using RCVTIMEO for reading instead xs_poll
+            //  due to a bug in libxs 1.1.0 and surveyor socket
+            rc = xs_setsockopt(sock, XS_RCVTIMEO, &left, sizeof(left));
+            assert(rc != -1);
         }
-        int rc = xs_poll(&item, 1, left);
-        rc = xs_recvmsg(sock, msg, XS_DONTWAIT);
+        rc = xs_recvmsg(sock, msg, 0);
         if(rc == -1) {
             if(errno == EAGAIN) continue;
             else if(errno == EFSM) {
@@ -56,14 +58,16 @@ static int do_receive(void *sock, xs_msg_t *msg) {
 }
 
 static int do_send(void *sock, char *data, size_t len, int more) {
-    xs_pollitem_t item = {sock, 0, XS_POLLOUT, 0 };
+    int rc;
     while(get_time() < cli_options.finishtime) {
-        int left = -1;
         if(cli_options.timeout) {
-            left = (int)((cli_options.finishtime - get_time())*1000);
+            int left = (int)((cli_options.finishtime - get_time())*1000);
+            //  Using SNDTIMEO for writing instead xs_poll
+            //  due to a bug in libxs 1.1.0 and surveyor socket
+            rc = xs_setsockopt(sock, XS_SNDTIMEO, &left, sizeof(left));
+            assert(rc != -1);
         }
-        int rc = xs_poll(&item, 1, left);
-        rc = xs_send(sock, data, len, (more ? XS_SNDMORE : 0)|XS_DONTWAIT);
+        rc = xs_send(sock, data, len, (more ? XS_SNDMORE : 0));
         if(rc == -1) {
             if(errno == EAGAIN) continue;
             else {
@@ -190,7 +194,7 @@ static void reply(int type) {
         }
 
         for(char **m = cli_options.messages; *m; ++m) {
-            if(do_send(sock, *m, strlen(*m), *(m+1))) goto end;
+            if(do_send(sock, *m, strlen(*m), *(m+1) ? 1 : 0)) goto end;
         }
     }
 end:
