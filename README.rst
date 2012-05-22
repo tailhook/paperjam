@@ -32,8 +32,70 @@ Compiling
     ./waf test
     sudo ./waf install
 
-Configuring
------------
+Command-line Tools
+------------------
+
+There are three binaries in the project:
+
+:paperjam:
+    Devices implementation, which uses YAMLy config (see below)
+
+:pjmonitor:
+    Monitor for paperjam. It attaches to monitor sockets (if configured),
+    and shows everything sent inside device. Useful for debugging.
+
+:pjutil:
+    Utility for sending and receiving messages from the command-line. Basic
+    usage is following:
+
+        pjutil --*lib* --*type* --connect *addr*
+
+    Where *lib* is either ``xs`` or ``zmq``. And *type* is one of the
+    socket types zeromq or crossroads support. Use ``--help`` to get a
+    full list of socket types.
+
+    *addr* can be any zeromq or crossroads address.  For example
+    ``tcp://127.0.0.1:1234``. The ``--connect`` option is repeatable and there
+    is also ``--bind`` option.
+
+    Every leftover arguments will be sent to the socket, if socket is writable.
+    Each argument is sent as a part of single multipart message. For the
+    ``rep`` and ``respondent`` sockets, those arguments will be replied for
+    each request from the socket. For other writable sockets the message will
+    be sent at the start.
+
+    All input messages will be printed one per line, quoted with double quotes
+    and space-separated.
+
+    Process with ``req`` socket type exits as soon as response comes.
+    ``push`` and ``pub`` processes exit as soon as message is put in OS
+    buffers (which basically means message is sent). All other modes are
+    left in the indefinite loop of listening and printing messages. You
+    can set maximum process running time for any socket type
+    with ``--timeout`` option.
+
+
+:zmqpush:
+:zmqpull:
+:zmqreq:
+:zmqrep:
+:zmqpub:
+:zmqsub:
+:xspush:
+:xspull:
+:xsreq:
+:xsrep:
+:xspub:
+:xssub:
+:xssurveyor:
+:xsrespondent:
+    Aliases (symlinks) to pjutil, which preconfigured for specific library
+    (libxs or libzmq) and socket type. Except skipping aformentioned arguments
+    they behave exactly as pjutil.
+
+
+Configuring Devices
+-------------------
 
 Default configuration file is in ``/etc/paperjam.yaml``. It is normal YAML_
 file with support of anchors and other nice things. Devices configured in
@@ -64,3 +126,4 @@ sockets and use ``Rep``/``Rep`` in config (however, we use ``X``-prefixed
 sockets internally to multiplex requests). All kinds of zmq and xs addresses
 are supported.
 
+.. _YAML: http://yaml.org
