@@ -37,14 +37,14 @@ Command-line Tools
 
 There are three binaries in the project:
 
-:paperjam:
+paperjam
     Devices implementation, which uses YAMLy config (see below)
 
-:pjmonitor:
+pjmonitor
     Monitor for paperjam. It attaches to monitor sockets (if configured),
     and shows everything sent inside device. Useful for debugging.
 
-:pjutil:
+pjutil
     Utility for sending and receiving messages from the command-line. Basic
     usage is following:
 
@@ -75,23 +75,11 @@ There are three binaries in the project:
     with ``--timeout`` option.
 
 
-:zmqpush:
-:zmqpull:
-:zmqreq:
-:zmqrep:
-:zmqpub:
-:zmqsub:
-:xspush:
-:xspull:
-:xsreq:
-:xsrep:
-:xspub:
-:xssub:
-:xssurveyor:
-:xsrespondent:
-    Aliases (symlinks) to pjutil, which preconfigured for specific library
+zmqpush, zmqpull, zmqreq, zmqrep, zmqpub, zmqsub, xspush, xspull, xsreq, xsrep, xspub, xssub, xssurveyor, xsrespondent
+    Aliases (symlinks) to pjutil, which are preconfigured for specific library
     (libxs or libzmq) and socket type. Except skipping aformentioned arguments
-    they behave exactly as pjutil.
+    they behave exactly as pjutil. Only supported combinations of library
+    and socket type are installed on the system.
 
 
 Configuring Devices
