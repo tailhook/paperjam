@@ -116,12 +116,12 @@ class TestZmqMon(TestZmq):
         sleep(0.4)  # wait until sockets connect
         req.send_multipart([b'hello', b'world'])
         self.assertEqual(mon.stdout.readline(),
-            b"[reqrep] ``in'', ``'', ``'', ``hello'', ``world''\n")
+            b'[reqrep] "in" "" "" "hello" "world"\n')
         self.assertEqual(rep.recv_multipart(),
             [b'hello', b'world'])
         rep.send_multipart([b'world', b'hello'])
         self.assertEqual(mon.stdout.readline(),
-            b"[reqrep] ``out'', ``'', ``'', ``world'', ``hello''\n")
+            b'[reqrep] "out" "" "" "world" "hello"\n')
 
     def testMonitorFilter(self):
         req = self.socket('REQ', 'ipc:///tmp/paperjam-rep')
@@ -137,7 +137,7 @@ class TestZmqMon(TestZmq):
         req.send_multipart([b'hello', b'world'])
         push.send_multipart([b'test1', b'test2', b'test3'])
         self.assertEqual(mon.stdout.readline(),
-            b"[pipeline] ``out'', ``test1'', ``test2'', ``test3''\n")
+            b'[pipeline] "out" "test1" "test2" "test3"\n')
 
 
 class TestZmqXs(TestZmq):

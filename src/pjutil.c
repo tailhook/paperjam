@@ -144,15 +144,6 @@ void print_usage(FILE *stream, char *arg0) {
         );
 }
 
-void print_message(char *msg, size_t len, int more) {
-    if(more) {
-        printf("\"%.*s\" ", (int)len, msg);
-    } else {
-        printf("\"%.*s\"\n", (int)len, msg);
-        fflush(stdout);
-    }
-}
-
 double get_time() {
     struct timespec ts;
     int rc = clock_gettime(CLOCK_MONOTONIC, &ts);

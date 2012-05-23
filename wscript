@@ -91,6 +91,7 @@ def build(bld):
             'src/pjmonitor.c',
             'src/handle_zmq.c',
             'src/handle_xs.c',
+            'src/print.c',
             ],
         target       = 'pjmonitor',
         includes     = ['src'],
@@ -103,7 +104,10 @@ def build(bld):
         )
     bld(
         features     = ['c', 'cprogram'],
-        source       = ['src/pjutil.c']
+        source       = [
+            'src/pjutil.c',
+            'src/print.c',
+            ]
             + (['src/xs_cli.c'] if 'LIB_XS' in bld.env else [])
             + (['src/zmq_cli.c'] if 'LIB_ZMQ' in bld.env else [])
             ,

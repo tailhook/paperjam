@@ -9,6 +9,7 @@
 #include "handle_zmq.h"
 #include "handle_xs.h"
 #include "pjmon.h"
+#include "print.h"
 
 #define ASSERTERR(val) if((val) == -1) { \
     fprintf(stderr, "Assertion error at %s:%d: %s\n", \
@@ -53,17 +54,20 @@ static int printmsg(context *ctx, config_socket_t *mon)
         }
         ASSERTERR(rc);
     }
+    printf("[%s] ", mon->_name);
     if(msg.xs) {
 #ifdef HAVE_XS
-        printf("[%s] ``%.*s''", mon->_name,
+        print_message(
+            (char *)xs_msg_data(&msg.xs_msg),
             (int)xs_msg_size(&msg.xs_msg),
-            (char *)xs_msg_data(&msg.xs_msg));
+            msg.more);
 #endif
     } else if(msg.zmq) {
 #ifdef HAVE_ZMQ
-        printf("[%s] ``%.*s''", mon->_name,
+        print_message(
+            (char *)zmq_msg_data(&msg.zmq_msg),
             (int)zmq_msg_size(&msg.zmq_msg),
-            (char *)zmq_msg_data(&msg.zmq_msg));
+            msg.more);
 #endif
     }
     while(msg.more) {
@@ -71,20 +75,20 @@ static int printmsg(context *ctx, config_socket_t *mon)
         ASSERTERR(mon->_impl->read_message(mon, &msg));
         if(msg.xs) {
 #ifdef HAVE_XS
-            printf(", ``%.*s''",
+            print_message(
+                (char *)xs_msg_data(&msg.xs_msg),
                 (int)xs_msg_size(&msg.xs_msg),
-                (char *)xs_msg_data(&msg.xs_msg));
+                msg.more);
 #endif
         } else if(msg.zmq) {
 #ifdef HAVE_ZMQ
-            printf(", ``%.*s''",
+            print_message(
+                (char *)zmq_msg_data(&msg.zmq_msg),
                 (int)zmq_msg_size(&msg.zmq_msg),
-                (char *)zmq_msg_data(&msg.zmq_msg));
+                msg.more);
 #endif
         }
     }
-    printf("\n");
-    fflush(stdout);
     close_message(&msg);
     return 1;
 }
