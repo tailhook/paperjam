@@ -126,6 +126,7 @@ __types__:
     frontend: !Struct socket
     backend: !Struct socket
     monitor: !Struct socket
+    _stat: !CType struct device_stat
 
 
 Zmq:

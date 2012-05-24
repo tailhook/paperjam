@@ -56,7 +56,7 @@ static int close_message(message *msg) {
 }
 
 static int forward(context *ctx, config_socket_t *src, config_socket_t *tgt,
-                   config_socket_t *mon, char *name)
+                   config_device_t *dev, int mode)
 {
     message msg;
     msg.xs = 0;
@@ -70,19 +70,27 @@ static int forward(context *ctx, config_socket_t *src, config_socket_t *tgt,
         }
         ASSERTERR(rc);
     }
+    if(mode) {
+        dev->_stat.input_msg += 1;
+    } else {
+        dev->_stat.output_msg += 1;
+    }
     int monactive = 0;
-    if(mon->kind) {
-        rc = mon->_impl->write_string(mon, name, 1);
+    if(dev->monitor.kind) {
+        rc = dev->monitor._impl->write_string(&dev->monitor,
+            mode ? "in" : "out", 1);
         if(rc >= 0) {
              monactive = 1;
+             dev->_stat.monitor_msg += 1;
         }
     }
     if(monactive) {
-        ASSERTERR(mon->_impl->write_message(mon, &msg));
+        ASSERTERR(dev->monitor._impl->write_message(&dev->monitor, &msg));
     }
     rc = tgt->_impl->write_message(tgt, &msg);
     if(rc == -1) {
         if(errno == EAGAIN) {
+            dev->_stat.discard_msg += 1;
             while(msg.more) {
                 close_message(&msg);
                 ASSERTERR(src->_impl->read_message(src, &msg));
@@ -96,7 +104,7 @@ static int forward(context *ctx, config_socket_t *src, config_socket_t *tgt,
         close_message(&msg);
         ASSERTERR(src->_impl->read_message(src, &msg));
         if(monactive) {
-            ASSERTERR(mon->_impl->write_message(mon, &msg));
+            ASSERTERR(dev->monitor._impl->write_message(&dev->monitor, &msg));
         }
         ASSERTERR(tgt->_impl->write_message(tgt, &msg));
     }
@@ -116,7 +124,7 @@ static int iterate(context *ctx) {
             rc = forward(ctx,
                 &item->value.frontend,
                 &item->value.backend,
-                &item->value.monitor, "in");
+                &item->value, 1);
             assert(rc >= 0);
         }
         if(item->value.backend._state.readable
@@ -125,7 +133,7 @@ static int iterate(context *ctx) {
             rc = forward(ctx,
                 &item->value.backend,
                 &item->value.frontend,
-                &item->value.monitor, "out");
+                &item->value, 0);
             assert(rc >= 0);
         }
         if(any) {

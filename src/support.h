@@ -21,5 +21,12 @@ typedef struct socket_state {
     int writeable;
 } socket_state;
 
+typedef struct device_stat {
+    size_t input_msg;
+    size_t output_msg;
+    size_t monitor_msg;
+    size_t discard_msg;
+} device_stat;
+
 #endif // _H_SUPPORT_
 
