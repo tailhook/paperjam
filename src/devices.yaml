@@ -138,6 +138,7 @@ Zmq:
     description: Zeromq io threads
 
 
+
 Xs:
 
   io-threads: !UInt
@@ -151,6 +152,20 @@ Xs:
     min: 8
     max: 1Mi
     descriptions: Libxs socket limit
+
+
+Estp:
+  socket: !Struct
+    =: socket
+    description: Socket to send ESTP-formatted statistics to
+  interval: !Int
+    default: 10
+    min: 1
+    max: 86400
+    description: The interval for statistics reporting in seconds
+  hostname: !String
+    =: localhost
+    description: The hostname to submit to ESTP
 
 
 Devices: !Mapping

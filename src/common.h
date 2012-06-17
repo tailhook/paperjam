@@ -47,6 +47,8 @@ typedef struct message {
 
 typedef struct context {
     config_main_t *config;
+    int stat_interval;
+    int64_t nextstat;
 
     void *xs_context;
     void *zmq_context;

@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <sys/time.h>
+#include <time.h>
 #include <poll.h>
 
 #include "config.h"
@@ -81,7 +83,6 @@ static int forward(context *ctx, config_socket_t *src, config_socket_t *tgt,
             mode ? "in" : "out", 1);
         if(rc >= 0) {
              monactive = 1;
-             dev->_stat.monitor_msg += 1;
         }
     }
     if(monactive) {
@@ -145,6 +146,67 @@ static int iterate(context *ctx) {
     return res;
 }
 
+static int check_statistics(context *ctx, int timeout) {
+    if(!ctx->stat_interval)
+        return timeout;
+
+    struct timeval curtime;
+    gettimeofday(&curtime, NULL);
+    int64_t time = (int64_t)curtime.tv_sec * 1000 + curtime.tv_usec / 1000;
+    int64_t diff = ctx->nextstat - time;
+    if(diff < 0) {
+        char tstamp[32];
+        struct tm tm;
+        gmtime_r(&curtime.tv_sec, &tm);
+        strftime(tstamp, 32, "%Y-%m-%dT%H:%M:%S", &tm);
+
+        config_socket_t *statsock = &ctx->config->Estp.socket;
+        char buf[512];
+        sprintf(buf,
+            "ESTP:%.64s:paperjam::devices: %s %ld %lu",
+            ctx->config->Estp.hostname,
+            tstamp,
+            ctx->config->Estp.interval,
+            ctx->config->Devices_len);
+        statsock->_impl->write_string(statsock, buf, 0);
+        CONFIG_STRING_DEVICE_LOOP(item, ctx->config->Devices) {
+            if(IS_READABLE(&item->value.frontend)) {
+                sprintf(buf,
+                    "ESTP:%.64s:paperjam:%.64s:input.messages:  %s %ld %lu",
+                    ctx->config->Estp.hostname,
+                    item->value.frontend._name,
+                    tstamp,
+                    ctx->config->Estp.interval,
+                    item->value._stat.input_msg);
+                statsock->_impl->write_string(statsock, buf, 0);
+            }
+            if(IS_WRITEABLE(&item->value.frontend)) {
+                sprintf(buf,
+                    "ESTP:%.64s:paperjam:%.64s:output.messages: %s %ld %lu",
+                    ctx->config->Estp.hostname,
+                    item->value.frontend._name,
+                    tstamp,
+                    ctx->config->Estp.interval,
+                    item->value._stat.output_msg);
+                statsock->_impl->write_string(statsock, buf, 0);
+            }
+            sprintf(buf,
+                "ESTP:%.64s:paperjam:%.64s:discard.messages: %s %ld %lu",
+                ctx->config->Estp.hostname,
+                item->value.frontend._name,
+                tstamp,
+                ctx->config->Estp.interval,
+                item->value._stat.discard_msg);
+            statsock->_impl->write_string(statsock, buf, 0);
+        }
+        ctx->nextstat = time - time % ctx->stat_interval + ctx->stat_interval;
+        diff = ctx->nextstat - time;
+    }
+    if(timeout == 0)
+        return 0;
+    return diff;
+}
+
 void loop(context *ctx) {
     int maxpoll = ctx->config->Devices_len*2;
     int nsocks = 0;
@@ -166,8 +228,10 @@ void loop(context *ctx) {
         nsocks += 1;
         sock->_impl->check_state(sock);
     }
+
     int timeout = 0;
     for(;;) {
+        timeout = check_statistics(ctx, timeout);
         int rc = poll(pollitems, nsocks, timeout);
         assert(rc >= 0); // remove
         if(rc > 0) {
@@ -193,15 +257,34 @@ void loop(context *ctx) {
 
 int main(int argc, char **argv) {
 
-    config_main_t *config = malloc(sizeof(config_main_t));
+    config_main_t *config = config_load(NULL, argc, argv);
     assert(config);
-    config_load(config, argc, argv);
 
     int zmq_socks = 0;
     int xs_socks = 0;
     context ctx;
     memset(&ctx, 0, sizeof(ctx));
     ctx.config = config;
+    if(config->Estp.socket.kind && config->Estp.interval) {
+        if(!IS_WRITEONLY(&config->Estp.socket)) {
+            fprintf(stderr, "Wrong socket for ESTP");
+            abort();
+        }
+        ctx.stat_interval = config->Estp.interval * 1000; //  milliseconds
+    }
+
+    if(config->Estp.socket.kind) {
+        if(IS_XS(&config->Estp.socket)) {
+            xs_socks += 1;
+            XS_SOCKETERR(&config->Estp.socket,
+                open_xs_socket(&ctx, &config->Estp.socket));
+        } else {
+            zmq_socks += 1;
+            ZMQ_SOCKETERR(&config->Estp.socket,
+                open_zmq_socket(&ctx, &config->Estp.socket));
+        }
+    }
+
 
     CONFIG_STRING_DEVICE_LOOP(item, config->Devices) {
         item->value.frontend._name = item->key;
