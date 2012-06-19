@@ -172,7 +172,7 @@ static int check_statistics(context *ctx, int timeout) {
         CONFIG_STRING_DEVICE_LOOP(item, ctx->config->Devices) {
             if(IS_READABLE(&item->value.frontend)) {
                 sprintf(buf,
-                    "ESTP:%.64s:paperjam:%.64s:input.messages:  %s %ld %lu",
+                    "ESTP:%.64s:paperjam:%.64s:input.messages:  %s %ld %lu:c",
                     ctx->config->Estp.hostname,
                     item->value.frontend._name,
                     tstamp,
@@ -182,7 +182,7 @@ static int check_statistics(context *ctx, int timeout) {
             }
             if(IS_WRITEABLE(&item->value.frontend)) {
                 sprintf(buf,
-                    "ESTP:%.64s:paperjam:%.64s:output.messages: %s %ld %lu",
+                    "ESTP:%.64s:paperjam:%.64s:output.messages: %s %ld %lu:c",
                     ctx->config->Estp.hostname,
                     item->value.frontend._name,
                     tstamp,
@@ -191,7 +191,7 @@ static int check_statistics(context *ctx, int timeout) {
                 statsock->_impl->write_string(statsock, buf, 0);
             }
             sprintf(buf,
-                "ESTP:%.64s:paperjam:%.64s:discard.messages: %s %ld %lu",
+                "ESTP:%.64s:paperjam:%.64s:discard.messages: %s %ld %lu:c",
                 ctx->config->Estp.hostname,
                 item->value.frontend._name,
                 tstamp,
