@@ -158,7 +158,7 @@ static int check_statistics(context *ctx, int timeout) {
         char tstamp[32];
         struct tm tm;
         gmtime_r(&curtime.tv_sec, &tm);
-        strftime(tstamp, 32, "%Y-%m-%dT%H:%M:%S", &tm);
+        strftime(tstamp, 32, "%Y-%m-%dT%H:%M:%SZ", &tm);
 
         config_socket_t *statsock = &ctx->config->Estp.socket;
         char buf[512];
