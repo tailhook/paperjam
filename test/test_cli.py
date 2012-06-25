@@ -8,6 +8,7 @@ class TestZmq(base.FullCliTest):
     def testReq(self):
         rep = self.pjutil('REP', 'ipc:///tmp/paperjam-req', 'world', 'hello')
         req = self.pjutil('REQ', 'ipc:///tmp/paperjam-rep', 'hello', 'world')
+        sleep(0.1)
         self.assertEqual(req.read(),
             b'"world" "hello"\n')
         self.assertEqual(rep.read(),
