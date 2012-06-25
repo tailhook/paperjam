@@ -12,7 +12,7 @@ APPNAME='paperjam'
 if os.path.exists('.git'):
     VERSION=subprocess.getoutput('git describe').lstrip('v').replace('-', '_')
 else:
-    VERSION='0.4'
+    VERSION='0.4.1'
 
 top = '.'
 out = 'build'
