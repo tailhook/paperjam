@@ -6,17 +6,19 @@ void print_message(char *data, size_t len, int more) {
     fputc('"', stream);
     for(char *c = data, *end = data + len; c < end; ++c) {
         if(isprint(*c)) {
-            if(*c == '\r') {
-                fprintf(stream, "\\r");
-            } else if(*c == '\n') {
-                fprintf(stream, "\\n");
+            if(*c == '\\') {
+                fprintf(stream, "\\\\");
             } else if(*c == '"') {
                 fprintf(stream, "\\\"");
             } else {
                 fputc(*c, stream);
             }
+        } else if(*c == '\r') {
+            fprintf(stream, "\\r");
+        } else if(*c == '\n') {
+            fprintf(stream, "\\n");
         } else {
-            fprintf(stream, "\\x%02hhx", *c);
+            fprintf(stream, "-\\x%02hhx", *c);
         }
     }
     fputc('"', stream);
